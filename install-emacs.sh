@@ -242,7 +242,42 @@ else
   ok "Git repo already present"
 fi
 
-# ── 8. Tree-sitter language grammars ──────────────────────────────────────────
+# ── 8. Extension bootstrap ────────────────────────────────────────────────────
+section "Extension bootstrap"
+
+EXTENSIONS_DIR="${SCRIPT_DIR}/lisp/extensions"
+
+if [[ -d "$EXTENSIONS_DIR" ]]; then
+  found_any=false
+  while IFS= read -r -d '' ext_dir; do
+    name="$(basename "$ext_dir")"
+
+    # skel is a structural template, not a real extension — never load it.
+    [[ "$name" == "skel" ]] && continue
+
+    ext_el="${ext_dir}/${name}.el"
+    if [[ ! -f "$ext_el" ]]; then
+      warn "${name}: missing ${name}.el — skipping"
+      continue
+    fi
+
+    found_any=true
+    log "Installing ${name}..."
+    "$EMACS_BIN" --batch \
+      --eval "(add-to-list 'load-path \"${ext_dir}\")" \
+      -l "$ext_el" \
+      --eval "(${name}-install)" \
+      2>&1 | sed 's/^/    /'
+    ok "${name}"
+
+  done < <(find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | sort -z)
+
+  [[ "$found_any" == false ]] && ok "No extensions to install"
+else
+  ok "No extensions directory — skipping"
+fi
+
+# ── 9. Tree-sitter language grammars ──────────────────────────────────────────
 section "Tree-sitter language grammars"
 
 log "Compiling grammars: clojure, python, javascript, typescript, tsx, json, css, bash, toml, yaml, markdown..."
@@ -273,7 +308,7 @@ log "Compiling grammars: clojure, python, javascript, typescript, tsx, json, css
 
 ok "Grammar compilation complete"
 
-# ── 9. Shell PATH ─────────────────────────────────────────────────────────────
+# ── 10. Shell PATH ────────────────────────────────────────────────────────────
 section "Shell PATH"
 
 shell_has_brew=false
@@ -293,7 +328,7 @@ if [[ "$shell_has_brew" == false ]]; then
   echo ""
 fi
 
-# ── Done ───────────────────────────────────────────────────────────────────────
+# ── Done ──────────────────────────────────────────────────────────────────────
 section "Complete"
 
 INSTALLED_VER=$("$EMACS_BIN" --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
