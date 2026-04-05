@@ -67,7 +67,7 @@ Optional files, present only when the extension has managed package dependencies
 
 ```
     ├── package.json     # pinned dependency versions
-    └── bun.lockb        # committed lockfile for reproducible installs
+    └── bun.lock         # committed lockfile for reproducible installs
 ```
 
 The parent repo keeps internal design documents in `docs/<name>-spec.md`. That file
@@ -93,9 +93,15 @@ managed package dependencies. That is the entire install story.
 
 The `.el` performs two levels of checking:
 
-- **On load** — verify required binaries are on `exec-path`. If absent, emit a
-  `display-warning` directing the user to `M-x <name>-install`. Never signal an
-  error at load time.
+- **On load** — verify all runtime dependencies are present and emit a
+  `display-warning` for each category of missing dependency. Never signal an
+  error at load time. Two classes of dependency must be checked:
+  - **External binaries** — verify required executables are on `exec-path`
+    (e.g. `bun`, `mmdc`). Direct the user to `M-x <name>-install`.
+  - **Emacs built-in capabilities** — verify any required Emacs feature is
+    compiled in (e.g. `(image-type-available-p 'svg)`, `(featurep 'native-compile)`).
+    These are not installed by the extension; direct the user to `install-emacs.sh`
+    with the specific rebuild step required.
 - **On command invocation** — re-check immediately before executing. Signal a
   user-facing error directing the user to `M-x <name>-install` if deps are absent.
 

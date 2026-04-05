@@ -6,8 +6,12 @@ description: >
   whenever the user wants to add a new capability to their Emacs config — whether
   phrased as "I want an extension that...", "add support for X in Emacs", "build
   me a <thing>-mode", "I need Emacs to do X", or "write an extension for Y".
-  Always trigger this skill for any Emacs extension or package adoption request,
-  even if the user doesn't say "extension" explicitly.
+  Also trigger this skill when modifying an existing extension in any way that
+  touches system dependencies, install logic, or Emacs built-in capabilities —
+  e.g. "add librsvg support", "the extension needs image rendering", "wire up a
+  new Homebrew dependency", or any change that might require rebuilding Emacs from
+  source. Always trigger this skill for any Emacs extension or package adoption
+  request, even if the user doesn't say "extension" explicitly.
 ---
 
 # ctrl-extension
@@ -157,6 +161,58 @@ If the extension needs third-party assets to be vendored:
 
 Add a batch Emacs invocation of `M-x <name>-install` in the extension
 bootstrapping section of `install-emacs.sh`, following the existing pattern.
+
+---
+
+## Emacs Rebuild Assessment
+
+Before running `check.sh`, classify every change made in Phase 3 as either
+**reload-only** or **rebuild-required**. The distinction matters because the
+wrong assumption leaves the user's environment broken with no clear next step.
+
+### Reload-only (restart Emacs)
+
+Changes that are pure Elisp or managed-package changes:
+- Edits to `.el` files only
+- Changes to `package.json` / `bun.lock` (bun/npm deps)
+- Adding or removing keybindings, commands, defcustoms
+
+The user can pick up these changes by restarting Emacs (or `M-x load-file`).
+
+### Rebuild-required (run `install-emacs.sh` → rebuild Emacs)
+
+Any change that adds a **Homebrew library that Emacs links against at compile
+time** requires a full Emacs rebuild from source. Common signals:
+
+- A new `brew install <lib>` was added to `install-emacs.sh` in the
+  dependencies section (step 3, before the Emacs build step)
+- The extension checks `(image-type-available-p ...)`, `(featurep 'native-compile)`,
+  `(treesit-available-p)`, or any other Emacs built-in capability at load time
+- The extension emits a `display-warning` directing the user to `install-emacs.sh`
+  with a `brew reinstall emacs --build-from-source` instruction
+
+Examples of rebuild-triggering deps: `librsvg` (SVG), `libgccjit` (native comp),
+`tree-sitter` (structural parsing), `libgif`, `libjpeg`, `imagemagick`.
+
+### What to tell the user
+
+When a rebuild is required, say so **explicitly** at the end of Phase 3 and
+again after Phase 4 passes. Do not leave the user in a broken state without
+a clear recovery path. The message should be:
+
+> This change added `<lib>` as a build-time dependency. Your current Emacs
+> build does not include it. Run `./install-emacs.sh` — it is idempotent and
+> will install the dependency then rebuild Emacs from source automatically.
+> Until the rebuild completes, the extension will emit a load-time warning and
+> the affected capability will be unavailable.
+
+**Invoke `./install-emacs.sh` on behalf of the user when possible.** The script
+is idempotent — safe to run at any time. If you have shell access, run it
+rather than just telling the user to run it. This closes the loop and avoids
+leaving the environment in a broken state.
+
+The extension's load-time `display-warning` is the in-Emacs signal; this
+message is the human signal delivered at the moment the code is written.
 
 ---
 

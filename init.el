@@ -46,10 +46,13 @@
 
 ;;; ─── Load Path: Your Extensions ──────────────────────────────────────────────
 ;;
-;; Add lisp/extensions/ to the load path so you can (require 'my-extension)
-;; from anywhere in your config.
+;; Each extension lives in its own subdirectory under lisp/extensions/<name>/.
+;; Add every such subdirectory to the load path so (require 'name) works.
 
-(add-to-list 'load-path (expand-file-name "lisp/extensions" user-emacs-directory))
+(let ((ext-dir (expand-file-name "lisp/extensions" user-emacs-directory)))
+  (dolist (subdir (directory-files ext-dir t "^[^.]"))
+    (when (file-directory-p subdir)
+      (add-to-list 'load-path subdir))))
 
 ;;; ─── Native Compilation: Runtime Settings ────────────────────────────────────
 ;;
@@ -340,14 +343,16 @@
 
 ;;; ─── Custom Extensions Loader ────────────────────────────────────────────────
 ;;
-;; Auto-load all .el files from lisp/extensions/. Add new extensions there
-;; and they'll be available on next startup (or after M-x load-file).
-;;
-;; Each extension should (provide 'its-name) at the bottom so this works cleanly.
+;; Each extension subdirectory contains a <name>.el file that owns all logic
+;; for that extension.  A subdirectory is only loaded when <name>/<name>.el
+;; exists — this excludes tests/ directories and structural templates (skel).
 
 (let ((ext-dir (expand-file-name "lisp/extensions" user-emacs-directory)))
-  (when (file-directory-p ext-dir)
-    (dolist (file (directory-files ext-dir t "\\.el$"))
-      (load file nil t))))
+  (dolist (subdir (directory-files ext-dir t "^[^.]"))
+    (when (file-directory-p subdir)
+      (let* ((name (file-name-nondirectory subdir))
+             (el (expand-file-name (concat name ".el") subdir)))
+        (when (file-exists-p el)
+          (load el nil t))))))
 
 ;;; init.el ends here

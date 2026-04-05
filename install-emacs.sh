@@ -72,12 +72,20 @@ fi
 
 eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
 
-# ── 3. Native compilation dependencies ────────────────────────────────────────
-section "Dependencies (libgccjit, tree-sitter)"
+# ── 3. Dependencies ───────────────────────────────────────────────────────────
+section "Dependencies (tree-sitter)"
 
-# libgccjit: required for native compilation (Emacs → GCC JIT backend)
-# tree-sitter: required for structural parsing (Emacs links against libtree-sitter)
-for dep in gcc libgccjit tree-sitter; do
+# tree-sitter: required for structural parsing (Emacs links against libtree-sitter).
+# Declared as a dependency in the Homebrew emacs formula, so it is picked up by
+# both the pre-built bottle and any from-source build.
+#
+# Note: libgccjit (native compilation) is intentionally omitted.  The Homebrew
+# emacs formula does not declare it as a dependency, so Homebrew's sandboxed
+# build environment (superenv) never adds it to PKG_CONFIG_PATH or LIBRARY_PATH
+# during compilation — meaning installing it here has no effect on the Emacs
+# build.  Native compilation is therefore not available with this formula.  If
+# native compilation is required, consider emacs-plus or building from source.
+for dep in tree-sitter; do
   if brew list --formula 2>/dev/null | grep -q "^${dep}$"; then
     ok "${dep} already installed"
   else
@@ -90,12 +98,9 @@ done
 # ── 4. GNU Emacs (official Homebrew formula) ───────────────────────────────────
 section "GNU Emacs (official Homebrew formula)"
 
-# The Homebrew core `emacs` formula builds directly from GNU source tarballs
-# from ftp.gnu.org. No third-party taps or patches are involved.
-#
-# Native compilation and tree-sitter are automatically enabled by the formula
-# when libgccjit and tree-sitter are present on the system — which is why we
-# install those dependencies first.
+# The Homebrew core `emacs` formula installs from a pre-built bottle signed by
+# Homebrew CI.  tree-sitter is a declared formula dependency and is included in
+# the bottle.  No build-from-source step is required or performed.
 
 needs_install=false
 
@@ -118,40 +123,19 @@ else
 fi
 
 if [[ "$needs_install" == true ]]; then
-  log "Installing GNU Emacs from official Homebrew formula (builds from source)..."
-  log "This takes 10–20 minutes."
-  # LIBRARY_PATH ensures configure finds libgccjit on Apple Silicon where
-  # Homebrew libs are outside the default system search path.
-  export LIBRARY_PATH="${HOMEBREW_PREFIX}/lib:${LIBRARY_PATH:-}"
-  # --build-from-source compiles against our freshly installed libgccjit and
-  # tree-sitter rather than using a pre-built bottle that may lack them.
-  brew install emacs --build-from-source
+  log "Installing GNU Emacs from official Homebrew formula..."
+  brew install emacs
   ok "Emacs installed"
 fi
 
 # ── 5. Verify build features ──────────────────────────────────────────────────
 section "Feature verification"
 
-EMACS_FEATURES=$("$EMACS_BIN" --batch --eval \
-  "(princ (format \"%s %s\"
-    (if (featurep 'native-compile) \"native-compile:YES\" \"native-compile:NO\")
-    (if (treesit-available-p)      \"tree-sitter:YES\"    \"tree-sitter:NO\")))" \
-  2>/dev/null)
-
-if echo "$EMACS_FEATURES" | grep -q "native-compile:YES"; then
-  ok "Native compilation: active"
-else
-  warn "Native compilation: NOT active — reinstalling from source with LIBRARY_PATH set..."
-  export LIBRARY_PATH="${HOMEBREW_PREFIX}/lib:${LIBRARY_PATH:-}"
-  brew reinstall emacs --build-from-source
-  ok "Emacs reinstalled"
-fi
-
-if echo "$EMACS_FEATURES" | grep -q "tree-sitter:YES"; then
+if "$EMACS_BIN" --batch --eval "(unless (treesit-available-p) (kill-emacs 1))" \
+     2>/dev/null; then
   ok "Tree-sitter: active"
 else
-  warn "Tree-sitter: NOT active"
-  warn "Ensure tree-sitter is installed, then: brew reinstall emacs --build-from-source"
+  warn "Tree-sitter: NOT active — run: brew reinstall emacs"
 fi
 
 # ── 6. /Applications symlink ──────────────────────────────────────────────────
@@ -179,8 +163,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for dir in \
   "${EMACS_CONFIG_DIR}" \
-  "${EMACS_CONFIG_DIR}/lisp/extensions" \
-  "${EMACS_CONFIG_DIR}/lisp/extensions/tests" \
   "${EMACS_CONFIG_DIR}/backups" \
   "${EMACS_CONFIG_DIR}/auto-saves"; do
   mkdir -p "$dir"
@@ -203,18 +185,34 @@ link_file() {
   fi
 }
 
+link_dir() {
+  local src="$1" dst="$2"
+  if [[ ! -d "$src" ]]; then
+    warn "$(basename "$src") not found in script dir — skipping"
+    return
+  fi
+  if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
+    ok "$(basename "$dst")/ already symlinked"
+  elif [[ -L "$dst" ]]; then
+    # Symlink exists but points elsewhere — replace it.
+    rm "$dst"
+    ln -s "$src" "$dst"
+    ok "Relinked $(basename "$dst")/ → ${src}"
+  elif [[ -d "$dst" ]]; then
+    # Real directory exists where a symlink is expected.
+    # This repo is the source of truth; replace the directory with the symlink.
+    rm -rf "$dst"
+    ln -s "$src" "$dst"
+    ok "Replaced real dir with symlink: $(basename "$dst")/ → ${src}"
+  else
+    ln -s "$src" "$dst"
+    ok "Symlinked $(basename "$dst")/ → ${src}"
+  fi
+}
+
 link_file "${SCRIPT_DIR}/early-init.el" "${EMACS_CONFIG_DIR}/early-init.el"
 link_file "${SCRIPT_DIR}/init.el"       "${EMACS_CONFIG_DIR}/init.el"
-
-for el in "${SCRIPT_DIR}/lisp/extensions/"*.el; do
-  [[ -f "$el" ]] && link_file "$el" \
-    "${EMACS_CONFIG_DIR}/lisp/extensions/$(basename "$el")"
-done
-
-for el in "${SCRIPT_DIR}/lisp/extensions/tests/"*.el; do
-  [[ -f "$el" ]] && link_file "$el" \
-    "${EMACS_CONFIG_DIR}/lisp/extensions/tests/$(basename "$el")"
-done
+link_dir  "${SCRIPT_DIR}/lisp"          "${EMACS_CONFIG_DIR}/lisp"
 
 if [[ ! -f "${EMACS_CONFIG_DIR}/.gitignore" ]]; then
   cat > "${EMACS_CONFIG_DIR}/.gitignore" <<'EOF'
@@ -249,6 +247,9 @@ EXTENSIONS_DIR="${SCRIPT_DIR}/lisp/extensions"
 
 if [[ -d "$EXTENSIONS_DIR" ]]; then
   found_any=false
+  _ext_tmp=$(mktemp)
+  find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null \
+    | sort -z > "$_ext_tmp"
   while IFS= read -r -d '' ext_dir; do
     name="$(basename "$ext_dir")"
 
@@ -270,7 +271,8 @@ if [[ -d "$EXTENSIONS_DIR" ]]; then
       2>&1 | sed 's/^/    /'
     ok "${name}"
 
-  done < <(find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | sort -z)
+  done < "$_ext_tmp"
+  rm -f "$_ext_tmp"
 
   [[ "$found_any" == false ]] && ok "No extensions to install"
 else

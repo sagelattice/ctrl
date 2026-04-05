@@ -57,6 +57,8 @@ while IFS= read -r f; do
 done < <(find "$SCRIPT_DIR" \( -name '*.el' -o -name '*.sh' \) \
     ! -path '*/vendor/*' \
     ! -path '*/.git/*' \
+    ! -path '*/node_modules/*' \
+    ! -name '.#*' \
     2>/dev/null | sort)
 
 spdx_insert_el() {
@@ -109,13 +111,18 @@ fi
 
 # Flat .el files directly in lisp/extensions/ are not allowed.
 # Every extension must live in its own named subdirectory.
+_flat_tmp=$(mktemp)
+find "$EXTENSIONS_DIR" -maxdepth 1 -name '*.el' -print0 2>/dev/null > "$_flat_tmp"
 while IFS= read -r -d '' flat_el; do
   fail "Flat extension file not allowed: $(basename "$flat_el")"
   log  "  Move to lisp/extensions/$(basename "${flat_el%.el}")/${flat_el##*/}"
   (( errors++ ))
-done < <(find "$EXTENSIONS_DIR" -maxdepth 1 -name '*.el' -print0 2>/dev/null)
+done < "$_flat_tmp"
+rm -f "$_flat_tmp"
 
 # Validate each subdirectory as an extension.
+_ext_tmp=$(mktemp)
+find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | sort -z > "$_ext_tmp"
 while IFS= read -r -d '' ext_dir; do
   name="$(basename "$ext_dir")"
 
@@ -165,9 +172,9 @@ while IFS= read -r -d '' ext_dir; do
     (( ext_errors++ ))
   fi
 
-  # If package.json is present, bun.lockb must also be present.
-  if [[ -f "${ext_dir}/package.json" && ! -f "${ext_dir}/bun.lockb" ]]; then
-    fail "${name}: package.json present but bun.lockb is missing (commit the lockfile)"
+  # If package.json is present, bun.lock must also be present.
+  if [[ -f "${ext_dir}/package.json" && ! -f "${ext_dir}/bun.lock" ]]; then
+    fail "${name}: package.json present but bun.lock is missing (commit the lockfile)"
     (( errors++ ))
     (( ext_errors++ ))
   fi
@@ -177,7 +184,8 @@ while IFS= read -r -d '' ext_dir; do
     valid_extensions+=( "$name" )
   fi
 
-done < <(find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | sort -z)
+done < "$_ext_tmp"
+rm -f "$_ext_tmp"
 
 if [[ ${#valid_extensions[@]} -eq 0 ]]; then
   warn "No structurally valid extensions to check"

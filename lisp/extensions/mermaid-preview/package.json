@@ -1,0 +1,9 @@
+{
+  "name": "mermaid-preview",
+  "version": "1.0.0",
+  "description": "Mermaid CLI for Emacs inline diagram rendering",
+  "private": true,
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "11.4.2"
+  }
+}

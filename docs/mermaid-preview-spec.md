@@ -2,9 +2,9 @@
 
 ## Goal
 
-Provide on-demand, inline rendering of Mermaid diagrams within Markdown buffers in
-Emacs, displayed as image overlays directly over the source block, without requiring a
-browser or Java runtime.
+Provide on-demand rendering of Mermaid diagrams within Markdown buffers in Emacs,
+opened as SVG files in the system viewer (Preview.app), without requiring a browser
+or Java runtime.
 
 ---
 
@@ -29,10 +29,10 @@ during rendering and exits after producing output.
 - Rendering is opt-in only — never triggered automatically on file open or save
 - The subprocess must run asynchronously so editing is never blocked
 - Mermaid CLI is pinned to a specific version via `package.json`; no floating dependencies
-- Rendered output is SVG, referenced via Emacs's librsvg integration for resolution independence
+- Rendered output is SVG, opened via the macOS `open` command — no Emacs image support required
 - No network access occurs during rendering; all assets are local
 - The extension is a single self-contained `.el` file following repo conventions
-- Temporary files are written to and cleaned up from the system temp directory
+- The input temp file is cleaned up after rendering; the output SVG is left for the viewer
 
 ---
 
@@ -48,9 +48,8 @@ flowchart TD
     F --> G[Spawn async Bun subprocess\nbunx mmdc -i source.mmd -o output.svg]
     G --> H{Exit code}
     H -- Non-zero --> I[Report error to minibuffer]
-    H -- Zero --> J[Read SVG output]
-    J --> K[Create image overlay\nover code block region]
-    K --> L([Diagram visible inline])
+    H -- Zero --> J[Open SVG with macOS open command]
+    J --> L([Diagram visible in Preview.app])
 ```
 
 ---
@@ -75,16 +74,11 @@ inherit any environment variables that could cause network access or shell expan
 
 ### 4. Output Handling
 
-On successful exit, read the SVG file from disk. On failure, surface the stderr output
-to the user via the minibuffer. Clean up temporary files in both cases.
+On successful exit, open the SVG file with the macOS `open` command, which launches
+Preview.app. On failure, surface the stderr output to the user via the minibuffer.
+Clean up the input temp file in both cases; leave the output SVG for the viewer to read.
 
-### 5. Overlay Management
-
-Create a buffer overlay spanning the code block region. Attach the rendered SVG as an
-inline image to the overlay. Provide a command to remove all active overlays and restore
-the raw source view. Overlays are not persisted across Emacs sessions.
-
-### 6. Commands and Keybindings
+### 5. Commands and Keybindings
 
 Expose two user-facing commands:
 
@@ -94,11 +88,10 @@ Expose two user-facing commands:
 Keybindings are defined locally within `markdown-mode` and do not pollute the global
 keymap.
 
-### 7. Configuration
+### 6. Configuration
 
 Expose a small set of customisation variables:
 
 - Path to the Bun executable (default: resolved from `PATH`)
 - Path to the `package.json`-local `mmdc` binary
-- Output format (SVG default; PNG as fallback for environments without librsvg)
 - Maximum diagram render timeout
