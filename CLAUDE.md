@@ -11,9 +11,14 @@ This repository is the canonical source of truth for all dotfiles. Files live he
 ```
 ctrl/
 ├── install-emacs.sh        # Hermetic macOS installer (Homebrew + Emacs 30)
+├── check.sh                # Locate Emacs and delegate to lisp/check.el
 └── lisp/
     ├── early-init.el       # Pre-GUI: GC tuning, UI suppression
     ├── init.el             # Main config: packages, editing, Clojure/CIDER, Elisp dev
+    ├── bootstrap.el        # Headless config scaffold + extension bootstrap (batch)
+    ├── bootstrap-test.el   # ERT tests for bootstrap.el
+    ├── check.el            # Headless quality checks: SPDX, structure, format, ERT (batch)
+    ├── check-test.el       # ERT tests for check.el
     └── extensions/         # Custom .el extensions (auto-loaded on startup)
         └── <name>/
             ├── <name>.el
@@ -93,7 +98,7 @@ Extensions follow the architecture defined in `docs/extension-architecture.md`. 
 - Each extension lives in its own subdirectory under `lisp/extensions/<name>/`
 - The `.el` file owns all logic including bootstrap (`M-x <name>-install`)
 - Paired ERT tests live in `tests/<name>-test.el` within the extension directory
-- Run `./check.sh` to validate all extensions (see the script header for the full list of checks)
+- Run `./check.sh` to validate all extensions (check logic lives in `lisp/check.el`)
 
 ## Conventions
 
@@ -103,6 +108,14 @@ Extensions follow the architecture defined in `docs/extension-architecture.md`. 
 - GC threshold: raised to `most-positive-fixnum` during startup, restored to 16MB after
 
 @docs/documentation-hygiene.md
+
+## Running Checks and Tests
+
+```bash
+./check.sh
+```
+
+This is the single entry point for all quality checks and unit tests. Run it after every change. It covers: SPDX header insertion, structural validation, formatting, byte-compilation, checkdoc, and ERT tests for all extensions plus `bootstrap.el` and `check.el`. Exits non-zero on any failure.
 
 ## Development Process
 

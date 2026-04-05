@@ -13,7 +13,7 @@
 #   - tree-sitter
 #   - GNU Emacs 30 (official Homebrew formula, built from source)
 #   - Emacs.app symlink in /Applications
-#   - Config scaffold at ~/.config/emacs/
+#   - Config scaffold, symlinks, extensions, and grammars (via lisp/bootstrap.el)
 #
 # Idempotent: safe to run multiple times.
 # Requires: macOS, internet access, sudo rights (for Xcode CLT only).
@@ -120,16 +120,6 @@ if [[ "$needs_install" == true ]]; then
   ok "Emacs installed"
 fi
 
-# ── 5. Verify build features ──────────────────────────────────────────────────
-section "Feature verification"
-
-if "$EMACS_BIN" --batch --eval "(unless (treesit-available-p) (kill-emacs 1))" \
-     2>/dev/null; then
-  ok "Tree-sitter: active"
-else
-  warn "Tree-sitter: NOT active — run: brew reinstall emacs"
-fi
-
 # ── 6. /Applications symlink ──────────────────────────────────────────────────
 section "/Applications/Emacs.app"
 
@@ -147,167 +137,14 @@ else
   ok "Symlink created: ${EMACS_APP_DST} → ${EMACS_APP_SRC}"
 fi
 
-# ── 7. Config scaffold ─────────────────────────────────────────────────────────
-section "Config scaffold"
+# ── 7. Bootstrap (Elisp) ──────────────────────────────────────────────────────
+section "Bootstrap (Elisp)"
 
-EMACS_CONFIG_DIR="${HOME}/.config/emacs"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for dir in \
-  "${EMACS_CONFIG_DIR}" \
-  "${EMACS_CONFIG_DIR}/backups" \
-  "${EMACS_CONFIG_DIR}/auto-saves"; do
-  mkdir -p "$dir"
-done
-ok "Directory structure ready"
+"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 
-link_file() {
-  local src="$1" dst="$2"
-  if [[ ! -f "$src" ]]; then
-    warn "$(basename "$src") not found in script dir — skipping"
-    return
-  fi
-  if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
-    ok "$(basename "$dst") already symlinked"
-  elif [[ -L "$dst" ]]; then
-    # Symlink exists but points elsewhere — replace it.
-    rm "$dst"
-    ln -s "$src" "$dst"
-    ok "Relinked $(basename "$dst") → ${src}"
-  elif [[ -e "$dst" ]]; then
-    warn "$(basename "$dst") exists and is not a symlink — skipping (remove manually to replace)"
-  else
-    ln -s "$src" "$dst"
-    ok "Symlinked $(basename "$dst") → ${src}"
-  fi
-}
-
-link_dir() {
-  local src="$1" dst="$2"
-  if [[ ! -d "$src" ]]; then
-    warn "$(basename "$src") not found in script dir — skipping"
-    return
-  fi
-  if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
-    ok "$(basename "$dst")/ already symlinked"
-  elif [[ -L "$dst" ]]; then
-    # Symlink exists but points elsewhere — replace it.
-    rm "$dst"
-    ln -s "$src" "$dst"
-    ok "Relinked $(basename "$dst")/ → ${src}"
-  elif [[ -d "$dst" ]]; then
-    # Real directory exists where a symlink is expected.
-    # This repo is the source of truth; replace the directory with the symlink.
-    rm -rf "$dst"
-    ln -s "$src" "$dst"
-    ok "Replaced real dir with symlink: $(basename "$dst")/ → ${src}"
-  else
-    ln -s "$src" "$dst"
-    ok "Symlinked $(basename "$dst")/ → ${src}"
-  fi
-}
-
-link_file "${SCRIPT_DIR}/lisp/early-init.el" "${EMACS_CONFIG_DIR}/early-init.el"
-link_file "${SCRIPT_DIR}/lisp/init.el"       "${EMACS_CONFIG_DIR}/init.el"
-link_dir  "${SCRIPT_DIR}/lisp"               "${EMACS_CONFIG_DIR}/lisp"
-
-if [[ ! -f "${EMACS_CONFIG_DIR}/.gitignore" ]]; then
-  cat > "${EMACS_CONFIG_DIR}/.gitignore" <<'EOF'
-eln-cache/
-tree-sitter/
-backups/
-auto-saves/
-custom.el
-cider-repl-history
-*.elc
-*~
-\#*\#
-.\#*
-.DS_Store
-EOF
-  ok ".gitignore written"
-fi
-
-if [[ ! -d "${EMACS_CONFIG_DIR}/.git" ]]; then
-  git -C "${EMACS_CONFIG_DIR}" init -q
-  git -C "${EMACS_CONFIG_DIR}" add .
-  git -C "${EMACS_CONFIG_DIR}" commit -q -m "Initial Emacs config scaffold"
-  ok "Git repo initialized at ${EMACS_CONFIG_DIR}"
-else
-  ok "Git repo already present"
-fi
-
-# ── 8. Extension bootstrap ────────────────────────────────────────────────────
-section "Extension bootstrap"
-
-EXTENSIONS_DIR="${SCRIPT_DIR}/lisp/extensions"
-
-if [[ -d "$EXTENSIONS_DIR" ]]; then
-  found_any=false
-  _ext_tmp=$(mktemp)
-  find "$EXTENSIONS_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null \
-    | sort -z > "$_ext_tmp"
-  while IFS= read -r -d '' ext_dir; do
-    name="$(basename "$ext_dir")"
-
-    # skel is a structural template, not a real extension — never load it.
-    [[ "$name" == "skel" ]] && continue
-
-    ext_el="${ext_dir}/${name}.el"
-    if [[ ! -f "$ext_el" ]]; then
-      warn "${name}: missing ${name}.el — skipping"
-      continue
-    fi
-
-    found_any=true
-    log "Installing ${name}..."
-    "$EMACS_BIN" --batch \
-      --eval "(add-to-list 'load-path \"${ext_dir}\")" \
-      -l "$ext_el" \
-      --eval "(${name}-install)" \
-      2>&1 | sed 's/^/    /'
-    ok "${name}"
-
-  done < "$_ext_tmp"
-  rm -f "$_ext_tmp"
-
-  [[ "$found_any" == false ]] && ok "No extensions to install"
-else
-  ok "No extensions directory — skipping"
-fi
-
-# ── 9. Tree-sitter language grammars ──────────────────────────────────────────
-section "Tree-sitter language grammars"
-
-log "Compiling grammars: clojure, python, javascript, typescript, tsx, json, css, bash, toml, yaml, markdown..."
-
-"$EMACS_BIN" --batch --eval "
-(setq treesit-language-source-alist
-      '((clojure    \"https://github.com/sogaiu/tree-sitter-clojure\")
-        (python     \"https://github.com/tree-sitter/tree-sitter-python\")
-        (javascript \"https://github.com/tree-sitter/tree-sitter-javascript\")
-        (typescript \"https://github.com/tree-sitter/tree-sitter-typescript\"
-                    \"master\" \"typescript/src\")
-        (tsx        \"https://github.com/tree-sitter/tree-sitter-typescript\"
-                    \"master\" \"tsx/src\")
-        (json       \"https://github.com/tree-sitter/tree-sitter-json\")
-        (css        \"https://github.com/tree-sitter/tree-sitter-css\")
-        (bash       \"https://github.com/tree-sitter/tree-sitter-bash\")
-        (toml       \"https://github.com/ikatyang/tree-sitter-toml\")
-        (yaml       \"https://github.com/ikatyang/tree-sitter-yaml\")
-        (markdown   \"https://github.com/ikatyang/tree-sitter-markdown\")))
-(dolist (lang (mapcar #'car treesit-language-source-alist))
-  (condition-case err
-      (progn
-        (treesit-install-language-grammar lang)
-        (message \"  ok  %s\" lang))
-    (error
-      (message \"  ERR %s: %s\" lang (error-message-string err)))))
-" 2>&1 | grep -E "^  (ok|ERR)" | sed 's/^  ok /  ✓ /;s/^  ERR /  ✗ /'
-
-ok "Grammar compilation complete"
-
-# ── 10. Shell PATH ────────────────────────────────────────────────────────────
+# ── 8. Shell PATH ─────────────────────────────────────────────────────────────
 section "Shell PATH"
 
 shell_has_brew=false
@@ -336,8 +173,8 @@ echo ""
 printf "  %-18s %s\n" "Emacs version:"  "${INSTALLED_VER}"
 printf "  %-18s %s\n" "Emacs binary:"   "${EMACS_BIN}"
 printf "  %-18s %s\n" "Emacs.app:"      "${EMACS_APP_DST}"
-printf "  %-18s %s\n" "Config dir:"     "${EMACS_CONFIG_DIR}"
-printf "  %-18s %s\n" "Extensions:"     "${EMACS_CONFIG_DIR}/lisp/extensions/"
+printf "  %-18s %s\n" "Config dir:"     "${HOME}/.config/emacs"
+printf "  %-18s %s\n" "Extensions:"     "${HOME}/.config/emacs/lisp/extensions/"
 echo ""
 echo -e "${GREEN}Run:${RESET}  emacs   or   open /Applications/Emacs.app"
 echo ""

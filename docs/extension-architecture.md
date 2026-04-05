@@ -124,7 +124,7 @@ exits non-zero on any failure — suitable for CI.
 ./check.sh
 ```
 
-See the `check.sh` header for the full list of checks it runs.
+See `lisp/check.el` for the full list of checks it runs.
 
 ### 7. Testing
 

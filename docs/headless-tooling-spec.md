@@ -92,7 +92,7 @@ flowchart TD
 Invoked by `install-emacs.sh` as:
 
 ```bash
-"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el"
+"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 ```
 
 The file is self-contained: it derives all paths relative to its own location via
@@ -147,7 +147,7 @@ an error, so `install-emacs.sh` can detect failure and surface it.
 Invoked by `check.sh` as:
 
 ```bash
-"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/check.el"
+"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/check.el" -f check-run
 ```
 
 Derives the repo root from its own file path. Accumulates an error count and calls
@@ -162,10 +162,11 @@ predicate.
 #### 2.2 SPDX header insertion
 
 For each source file, check for the presence of `SPDX-License-Identifier:` and
-`SPDX-FileCopyrightText:` lines. If absent, open the file with `find-file-noselect`,
-insert the missing lines immediately after line 1 (preserving shebang lines), and
-`save-buffer`. Use the comment syntax appropriate to the file type (`;; ` for `.el`,
-`# ` for `.sh`).
+`SPDX-FileCopyrightText:` lines. If absent, read the file into a `with-temp-buffer`
+via `insert-file-contents`, insert the missing lines immediately after line 1
+(preserving shebang lines), and write back with `write-region`. Avoids activating
+any major mode (no `find-file-noselect`). Use the comment syntax appropriate to the
+file type (`;; ` for `.el`, `# ` for `.sh`).
 
 #### 2.3 Extension discovery
 
@@ -200,10 +201,10 @@ output as a failure.
 
 #### 2.7 ERT
 
-For each valid extension, load `<name>.el` and `tests/<name>-test.el` into a clean
-batch environment and run `ert-run-tests-batch-and-exit` via a subprocess
-(`emacs --batch`). Parse the exit code; non-zero is a failure. Capture and display
-the last few lines of output on failure.
+Always run `bootstrap-test.el` and `check-test.el` against their respective source
+files. Then, for each valid extension, load `<name>.el` and `tests/<name>-test.el`.
+All suites run in isolated subprocesses (`emacs --batch`). Parse the exit code;
+non-zero is a failure. Capture and display the last few lines of output on failure.
 
 ---
 
@@ -214,7 +215,7 @@ bootstrap, tree-sitter grammars). Replace with a single call:
 
 ```bash
 section "Bootstrap (Elisp)"
-"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el"
+"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 ```
 
 Retain sections 1–4 (Xcode CLT, Homebrew, tree-sitter, Emacs install),
@@ -229,13 +230,13 @@ independent of Emacs.
 Replace all logic after the Emacs binary lookup with a single call:
 
 ```bash
-"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/check.el"
+"$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/check.el" -f check-run
 exit $?
 ```
 
-The shell script retains its colour helpers and binary-location logic only as a
-convenience wrapper. Alternatively, `check.sh` may be replaced entirely with an
-alias or documented one-liner once `check.el` is stable.
+The shell script retains only its binary-location logic as a convenience wrapper.
+Alternatively, `check.sh` may be replaced entirely with an alias or documented
+one-liner once `check.el` is stable.
 
 ---
 

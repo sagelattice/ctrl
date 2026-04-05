@@ -19,6 +19,7 @@ When a file changes, read only its counterparts:
 | `docs/extension-architecture.md` | `check.sh` header; `lisp/extensions/skel/skel.el` |
 | `docs/<name>-spec.md` | `lisp/extensions/<name>/<name>.el` docstrings and behaviour |
 | `docs/elisp-pitfalls.md` | `lisp/CLAUDE.md` import |
+| `docs/elisp-testing-pitfalls.md` | `lisp/CLAUDE.md` import |
 | `docs/elisp-extension-pitfalls.md` | `lisp/extensions/CLAUDE.md` import |
 | `check.sh` | Its own header comment vs actual steps in the script body |
 | `install-emacs.sh` | Its own header comment vs actual steps; `CLAUDE.md` Installation section |
