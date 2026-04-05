@@ -124,14 +124,7 @@ exits non-zero on any failure — suitable for CI.
 ./check.sh
 ```
 
-The script runs four checks in order across every extension:
-
-| Step | Tool | Effect |
-|---|---|---|
-| Format | `indent-region` | Rewrites indentation in place |
-| Byte-compile | `batch-byte-compile` | Catches undefined vars, wrong-arity calls, syntax errors |
-| Checkdoc | `checkdoc-file` | Validates docstring presence and style |
-| ERT | `ert-run-tests-batch-and-exit` | Runs the paired test suite |
+See the `check.sh` header for the full list of checks it runs.
 
 ### 7. Testing
 

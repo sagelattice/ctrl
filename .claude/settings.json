@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -e '.tool_input.file_path | test(\"\\\\.(md|el|sh)$\")' > /dev/null && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Source file changed — run /doc-check to verify documentation consistency.\"}}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}

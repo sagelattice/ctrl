@@ -77,6 +77,15 @@
       (should (string-match-p "flowchart" (nth 2 (nth 0 blocks))))
       (should (string-match-p "sequenceDiagram" (nth 2 (nth 1 blocks)))))))
 
+(ert-deftest mermaid-preview-test-block-at-point-on-fence-line ()
+  "Returns block data when point is at column 0 of the opening fence line."
+  (mermaid-preview-test--with-markdown-buffer
+      "```mermaid\ngraph TD\n  A --> B\n```\n"
+    (goto-char (point-min))             ; column 0 of the opening fence
+    (let ((result (mermaid-preview--block-at-point)))
+      (should result)
+      (should (string-match-p "graph TD" (nth 2 result))))))
+
 (ert-deftest mermaid-preview-test-block-positions-ordered ()
   "Block BEG is always less than END."
   (mermaid-preview-test--with-markdown-buffer

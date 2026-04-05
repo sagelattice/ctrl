@@ -10,7 +10,7 @@
 # Installs:
 #   - Xcode Command Line Tools (if absent)
 #   - Homebrew (if absent)
-#   - libgccjit + tree-sitter libraries
+#   - tree-sitter
 #   - GNU Emacs 30 (official Homebrew formula, built from source)
 #   - Emacs.app symlink in /Applications
 #   - Config scaffold at ~/.config/emacs/
@@ -76,15 +76,7 @@ eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
 section "Dependencies (tree-sitter)"
 
 # tree-sitter: required for structural parsing (Emacs links against libtree-sitter).
-# Declared as a dependency in the Homebrew emacs formula, so it is picked up by
-# both the pre-built bottle and any from-source build.
-#
-# Note: libgccjit (native compilation) is intentionally omitted.  The Homebrew
-# emacs formula does not declare it as a dependency, so Homebrew's sandboxed
-# build environment (superenv) never adds it to PKG_CONFIG_PATH or LIBRARY_PATH
-# during compilation — meaning installing it here has no effect on the Emacs
-# build.  Native compilation is therefore not available with this formula.  If
-# native compilation is required, consider emacs-plus or building from source.
+# Declared as a dependency in the Homebrew emacs formula.
 for dep in tree-sitter; do
   if brew list --formula 2>/dev/null | grep -q "^${dep}$"; then
     ok "${dep} already installed"
@@ -177,6 +169,11 @@ link_file() {
   fi
   if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
     ok "$(basename "$dst") already symlinked"
+  elif [[ -L "$dst" ]]; then
+    # Symlink exists but points elsewhere — replace it.
+    rm "$dst"
+    ln -s "$src" "$dst"
+    ok "Relinked $(basename "$dst") → ${src}"
   elif [[ -e "$dst" ]]; then
     warn "$(basename "$dst") exists and is not a symlink — skipping (remove manually to replace)"
   else
@@ -210,9 +207,9 @@ link_dir() {
   fi
 }
 
-link_file "${SCRIPT_DIR}/early-init.el" "${EMACS_CONFIG_DIR}/early-init.el"
-link_file "${SCRIPT_DIR}/init.el"       "${EMACS_CONFIG_DIR}/init.el"
-link_dir  "${SCRIPT_DIR}/lisp"          "${EMACS_CONFIG_DIR}/lisp"
+link_file "${SCRIPT_DIR}/lisp/early-init.el" "${EMACS_CONFIG_DIR}/early-init.el"
+link_file "${SCRIPT_DIR}/lisp/init.el"       "${EMACS_CONFIG_DIR}/init.el"
+link_dir  "${SCRIPT_DIR}/lisp"               "${EMACS_CONFIG_DIR}/lisp"
 
 if [[ ! -f "${EMACS_CONFIG_DIR}/.gitignore" ]]; then
   cat > "${EMACS_CONFIG_DIR}/.gitignore" <<'EOF'

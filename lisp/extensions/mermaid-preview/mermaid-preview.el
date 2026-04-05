@@ -112,8 +112,11 @@ fence markers.  SOURCE is the diagram text between the fences."
   (save-excursion
     (let ((pos (point))
           open-beg content-beg content-end close-end)
-      ;; Search backward for the opening fence.
-      (goto-char pos)
+      ;; Search backward for the opening fence.  Start from the beginning of
+      ;; the next line so the entire current line is included in the search
+      ;; range — re-search-backward is exclusive of the exact start position,
+      ;; which would miss a fence when point is anywhere on the fence line.
+      (goto-char (line-beginning-position 2))
       (when (re-search-backward mermaid-preview--fence-open-re nil t)
         (setq open-beg (point))
         (forward-line 1)
@@ -182,7 +185,7 @@ temp file is cleaned up in both cases; the output SVG is left for the viewer."
 ;; ── Public commands ───────────────────────────────────────────────────────────
 
 (defun mermaid-preview-block-at-point ()
-  "Render the Mermaid diagram block under point and open as a PNG image."
+  "Render the Mermaid diagram block under point and open as an SVG image."
   (interactive)
   (mermaid-preview--check-deps)
   (let ((block (mermaid-preview--block-at-point)))
@@ -191,7 +194,7 @@ temp file is cleaned up in both cases; the output SVG is left for the viewer."
       (message "Mermaid-preview: no Mermaid block found at point."))))
 
 (defun mermaid-preview-all-blocks ()
-  "Render every Mermaid diagram block in the current buffer as PNG images."
+  "Render every Mermaid diagram block in the current buffer as SVG images."
   (interactive)
   (mermaid-preview--check-deps)
   (let ((blocks (mermaid-preview--all-blocks)))

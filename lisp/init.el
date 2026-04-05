@@ -14,7 +14,11 @@
 ;;   ├── early-init.el       (loaded before this file)
 ;;   ├── init.el             (this file)
 ;;   └── lisp/
-;;       └── extensions/     (your custom .el files go here)
+;;       └── extensions/
+;;           └── <name>/
+;;               ├── <name>.el
+;;               └── tests/
+;;                   └── <name>-test.el
 
 ;;; ─── Package Management ───────────────────────────────────────────────────────
 
