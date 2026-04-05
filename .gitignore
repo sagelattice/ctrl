@@ -4,3 +4,5 @@
 *.elc
 .DS_Store
 node_modules/
+.claude/skills/*-workspace/
+.claude/skills/*/evals/

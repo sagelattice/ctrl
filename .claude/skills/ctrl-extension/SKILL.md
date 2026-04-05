@@ -1,17 +1,15 @@
 ---
 name: ctrl-extension
 description: >
-  Design and implement custom Emacs Lisp extensions for the ctrl dotfiles repo,
-  or adopt a well-maintained existing package when one exists. Use this skill
-  whenever the user wants to add a new capability to their Emacs config — whether
-  phrased as "I want an extension that...", "add support for X in Emacs", "build
-  me a <thing>-mode", "I need Emacs to do X", or "write an extension for Y".
-  Also trigger this skill when modifying an existing extension in any way that
-  touches system dependencies, install logic, or Emacs built-in capabilities —
-  e.g. "add librsvg support", "the extension needs image rendering", "wire up a
-  new Homebrew dependency", or any change that might require rebuilding Emacs from
-  source. Always trigger this skill for any Emacs extension or package adoption
-  request, even if the user doesn't say "extension" explicitly.
+  Choose this skill whenever a user wants to add a new capability to their ctrl
+  Emacs configuration — anything Emacs doesn't currently do or have installed.
+  This includes adopting a package (vterm, org-roam, etc.), building a custom
+  Emacs Lisp extension, or integrating an external tool into Emacs. The defining
+  signal is that the user wants something *new* rather than adjusting something
+  already present. Trigger on phrasings like "add X", "install X", "I want Emacs
+  to do X", "how do I get X in Emacs", "it would be nice to have X", or
+  "integrate X into my setup". Skip for configuring existing packages, fixing
+  bugs in code already installed, or tasks unrelated to Emacs package adoption.
 ---
 
 # ctrl-extension
