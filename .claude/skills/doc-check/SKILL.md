@@ -1,6 +1,6 @@
 ---
 name: doc-check
-description: Lightweight documentation consistency check for the ctrl Emacs dotfiles repo. Run this automatically after editing any .md file, check.sh, install-emacs.sh, or any .el file. Scoped to changed files only — does not read the full codebase. Use /doc-audit for a comprehensive sweep.
+description: Lightweight documentation consistency check for the ctrl Emacs dotfiles repo. Run this automatically after editing any .md file, check.sh, install.sh, or any .el file. Scoped to changed files only — does not read the full codebase. Use /doc-audit for a comprehensive sweep.
 ---
 
 # doc-check
@@ -22,7 +22,7 @@ When a file changes, read only its counterparts:
 | `docs/elisp-testing-pitfalls.md` | `lisp/CLAUDE.md` import |
 | `docs/elisp-extension-pitfalls.md` | `lisp/extensions/CLAUDE.md` import |
 | `check.sh` | Its own header comment vs actual steps in the script body |
-| `install-emacs.sh` | Its own header comment vs actual steps; `CLAUDE.md` Installation section |
+| `install.sh` | Its own header comment vs actual steps; `CLAUDE.md` Installation section |
 | `lisp/init.el` | Layout comment at top vs actual loader logic |
 | `lisp/extensions/<name>/<name>.el` | `docs/<name>-spec.md`; docstrings vs implementation |
 | `lisp/CLAUDE.md` | `docs/elisp-pitfalls.md` exists and is current |

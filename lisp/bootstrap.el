@@ -2,9 +2,9 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; SPDX-FileCopyrightText: 2026 Anthony Urena
 ;;
-;; Invoked headlessly by install-emacs.sh after Emacs is installed:
+;; Invoked headlessly by install.sh after Emacs is installed:
 ;;
-;;   emacs --batch -l lisp/bootstrap.el
+;;   emacs --batch -l lisp/bootstrap.el -f bootstrap-run
 ;;
 ;; Performs feature verification, config scaffold, extension bootstrap,
 ;; and tree-sitter grammar compilation.  Exits with status 1 if any step
@@ -21,6 +21,9 @@
 (defconst bootstrap--lisp-dir
   (file-name-directory (or load-file-name buffer-file-name ""))
   "Absolute path to the lisp/ directory containing bootstrap.el.")
+
+;; Load the canonical grammar list (shared with init.el).
+(load (expand-file-name "grammars" bootstrap--lisp-dir) nil t)
 
 (defvar bootstrap--errors 0
   "Count of errors accumulated during the current bootstrap run.")
@@ -161,33 +164,25 @@ Per-language errors are caught and reported without aborting the run."
   (bootstrap--section "Tree-sitter language grammars")
   (if (not (and (fboundp 'treesit-available-p) (treesit-available-p)))
       (bootstrap--warn "Tree-sitter not available — skipping grammar compilation")
-    (setq treesit-language-source-alist
-          '((clojure    "https://github.com/sogaiu/tree-sitter-clojure")
-            (python     "https://github.com/tree-sitter/tree-sitter-python")
-            (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
-            (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
-                        "master" "typescript/src")
-            (tsx        "https://github.com/tree-sitter/tree-sitter-typescript"
-                        "master" "tsx/src")
-            (json       "https://github.com/tree-sitter/tree-sitter-json")
-            (css        "https://github.com/tree-sitter/tree-sitter-css")
-            (bash       "https://github.com/tree-sitter/tree-sitter-bash")
-            (toml       "https://github.com/ikatyang/tree-sitter-toml")
-            (yaml       "https://github.com/ikatyang/tree-sitter-yaml")
-            (markdown   "https://github.com/ikatyang/tree-sitter-markdown")))
-    (bootstrap--log "Compiling grammars: %s"
-                    (mapconcat (lambda (x) (symbol-name (car x)))
-                               treesit-language-source-alist ", "))
-    (dolist (entry treesit-language-source-alist)
-      (let ((lang (car entry)))
-        (condition-case err
-            (progn
-              (treesit-install-language-grammar lang)
-              (bootstrap--ok "%s" (symbol-name lang)))
-          (error
-           (bootstrap--fail "%s: %s" (symbol-name lang)
-                            (error-message-string err))))))
-    (bootstrap--ok "Grammar compilation complete")))
+    (let ((to-compile
+           (seq-filter (lambda (entry)
+                         (not (treesit-language-available-p (car entry))))
+                       treesit-language-source-alist)))
+      (if (null to-compile)
+          (bootstrap--ok "All grammars already installed — skipping")
+        (bootstrap--log "Compiling grammars: %s"
+                        (mapconcat (lambda (x) (symbol-name (car x)))
+                                   to-compile ", "))
+        (dolist (entry to-compile)
+          (let ((lang (car entry)))
+            (condition-case err
+                (progn
+                  (treesit-install-language-grammar lang)
+                  (bootstrap--ok "%s" (symbol-name lang)))
+              (error
+               (bootstrap--fail "%s: %s" (symbol-name lang)
+                                (error-message-string err))))))
+        (bootstrap--ok "Grammar compilation complete")))))
 
 ;; ── Entry point ──────────────────────────────────────────────────────────────
 

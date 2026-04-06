@@ -85,7 +85,7 @@ Directs the user to run `M-x mermaid-preview-install'."
 (defun mermaid-preview-install ()
   "Install Bun (JS runtime) and mmdc (Mermaid CLI) for mermaid-preview.
 This command is idempotent — safe to run multiple times.
-Called automatically by install-emacs.sh; also available interactively to
+Called automatically by install.sh; also available interactively to
 repair or re-run the extension bootstrap."
   (interactive)
   (message "Mermaid-preview: installing Bun via Homebrew...")

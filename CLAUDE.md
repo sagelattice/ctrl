@@ -4,17 +4,18 @@ Emacs configuration targeting GNU Emacs 30+ on macOS, with tree-sitter enabled.
 
 ## Source of Truth
 
-This repository is the canonical source of truth for all dotfiles. Files live here and are symlinked out to their expected system locations by `install-emacs.sh`. Never edit files at their symlink destinations — always edit the source here.
+This repository is the canonical source of truth for all dotfiles. Files live here and are symlinked out to their expected system locations by `install.sh`. Never edit files at their symlink destinations — always edit the source here.
 
 ## Repository Layout
 
 ```
 ctrl/
-├── install-emacs.sh        # Hermetic macOS installer (Homebrew + Emacs 30)
+├── install.sh              # Hermetic macOS installer (Homebrew + Emacs 30)
 ├── check.sh                # Locate Emacs and delegate to lisp/check.el
 └── lisp/
     ├── early-init.el       # Pre-GUI: GC tuning, UI suppression
     ├── init.el             # Main config: packages, editing, Clojure/CIDER, Elisp dev
+    ├── grammars.el         # Canonical tree-sitter grammar source list
     ├── bootstrap.el        # Headless config scaffold + extension bootstrap (batch)
     ├── bootstrap-test.el   # ERT tests for bootstrap.el
     ├── check.el            # Headless quality checks: SPDX, structure, format, ERT (batch)
@@ -26,7 +27,7 @@ ctrl/
                 └── <name>-test.el
 ```
 
-`install-emacs.sh` symlinks these files into `~/.config/emacs/` — do not edit them there directly. Edit the source files here; the symlinks keep the live config in sync.
+`install.sh` symlinks these files into `~/.config/emacs/` — do not edit them there directly. Edit the source files here; the symlinks keep the live config in sync.
 
 Expected live config layout:
 
@@ -44,7 +45,7 @@ Expected live config layout:
 ## Installation
 
 ```bash
-./install-emacs.sh
+./install.sh
 ```
 
 Idempotent. Installs Xcode CLT, Homebrew, `tree-sitter`, and the Emacs 30 Homebrew formula (pre-built bottle), compiles tree-sitter grammars, creates the config scaffold, and symlinks this repo into `~/.config/emacs/`.
@@ -72,24 +73,13 @@ Archives: GNU ELPA (priority 10) > NonGNU ELPA (8) > MELPA (5).
 
 Configured languages: clojure, python, javascript, typescript, tsx, json, css, bash, toml, yaml, markdown.
 
-Grammars are compiled by `install-emacs.sh`. To install one manually:
+Grammars are compiled by `install.sh`. To install one manually:
 
 ```
 M-x treesit-install-language-grammar RET <language> RET
 ```
 
 Mode remapping is active for: python, javascript, json, css, bash/sh.
-
-## Key Bindings
-
-| Key | Command |
-|---|---|
-| `C-x g` | `magit-status` |
-| `C-c C-k` | Load buffer (Clojure and Elisp) |
-| `C-c C-e` | Eval expression before point (CIDER) |
-| `C-c C-z` | Switch to REPL (CIDER) |
-| `C-c C-d d` | Show documentation (CIDER) |
-| `C-c M-j` | Jack-in / start REPL (CIDER) |
 
 ## Adding Custom Extensions
 
@@ -120,7 +110,7 @@ This is the single entry point for all quality checks and unit tests. Run it aft
 ## Development Process
 
 - Shell is for installing Emacs itself (Homebrew, build toolchain, tree-sitter grammars).  Everything beyond that — extension discovery, loading, configuration — belongs in Emacs Lisp.  Resist the pull to reach for shell when Elisp will do.
-- All system configuration (symlinks, directory scaffold, extension bootstrap) must go through `install-emacs.sh`.  Never apply configuration changes with ad-hoc shell commands — the script is the deterministic, idempotent record of system state.
-- Each dependency has exactly one canonical installation site.  Emacs build dependencies (tree-sitter, etc.) are installed in `install-emacs.sh`.  Extension runtime dependencies (language runtimes, managed packages) are installed in that extension's `M-x <name>-install`.  Never install the same dependency in two places.
+- All system configuration (symlinks, directory scaffold, extension bootstrap) must go through `install.sh`.  Never apply configuration changes with ad-hoc shell commands — the script is the deterministic, idempotent record of system state.
+- Each dependency has exactly one canonical installation site.  Emacs build dependencies (tree-sitter, etc.) are installed in `install.sh`.  Extension runtime dependencies (language runtimes, managed packages) are installed in that extension's `M-x <name>-install`.  Never install the same dependency in two places.
 - Extensions that require Emacs built-in capabilities must assert those requirements as `display-warning` calls at load time — not inside the install function.  The install function only installs what it owns.
 - When a coding error causes `./check.sh` to fail, or a bug surfaces in a live session, record it in `docs/elisp-pitfalls.md` (general Elisp) or `docs/elisp-extension-pitfalls.md` (extension-specific) so it is not reproduced in future extensions.

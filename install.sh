@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Anthony Urena
-# install.sh — Hermetic Emacs installation for macOS
+# install.sh — Hermetic macOS installer (Homebrew + Emacs 30)
 #
 # Installs GNU Emacs from the official Homebrew core formula (unpatched GNU
 # source). Native compilation and tree-sitter are enabled by default in the
@@ -11,8 +11,7 @@
 #   - Xcode Command Line Tools (if absent)
 #   - Homebrew (if absent)
 #   - tree-sitter
-#   - GNU Emacs 30 (official Homebrew formula, built from source)
-#   - Emacs.app symlink in /Applications
+#   - GNU Emacs 30 (official Homebrew formula, pre-built bottle)
 #   - Config scaffold, symlinks, extensions, and grammars (via lisp/bootstrap.el)
 #
 # Idempotent: safe to run multiple times.
@@ -120,31 +119,14 @@ if [[ "$needs_install" == true ]]; then
   ok "Emacs installed"
 fi
 
-# ── 6. /Applications symlink ──────────────────────────────────────────────────
-section "/Applications/Emacs.app"
-
-EMACS_APP_SRC="${HOMEBREW_PREFIX}/opt/emacs/Emacs.app"
-EMACS_APP_DST="/Applications/Emacs.app"
-
-if [[ ! -e "$EMACS_APP_SRC" ]]; then
-  warn "Emacs.app not found at expected path ${EMACS_APP_SRC} — skipping symlink"
-elif [[ -L "$EMACS_APP_DST" && "$(readlink "$EMACS_APP_DST")" == "$EMACS_APP_SRC" ]]; then
-  ok "Symlink already correct"
-elif [[ -e "$EMACS_APP_DST" ]]; then
-  warn "${EMACS_APP_DST} exists but points elsewhere — skipping (remove manually if needed)"
-else
-  ln -s "$EMACS_APP_SRC" "$EMACS_APP_DST"
-  ok "Symlink created: ${EMACS_APP_DST} → ${EMACS_APP_SRC}"
-fi
-
-# ── 7. Bootstrap (Elisp) ──────────────────────────────────────────────────────
+# ── 5. Bootstrap (Elisp) ──────────────────────────────────────────────────────
 section "Bootstrap (Elisp)"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 
-# ── 8. Shell PATH ─────────────────────────────────────────────────────────────
+# ── 6. Shell PATH ─────────────────────────────────────────────────────────────
 section "Shell PATH"
 
 shell_has_brew=false
@@ -172,11 +154,10 @@ INSTALLED_VER=$("$EMACS_BIN" --version 2>/dev/null | head -1 | grep -oE '[0-9]+\
 echo ""
 printf "  %-18s %s\n" "Emacs version:"  "${INSTALLED_VER}"
 printf "  %-18s %s\n" "Emacs binary:"   "${EMACS_BIN}"
-printf "  %-18s %s\n" "Emacs.app:"      "${EMACS_APP_DST}"
 printf "  %-18s %s\n" "Config dir:"     "${HOME}/.config/emacs"
 printf "  %-18s %s\n" "Extensions:"     "${HOME}/.config/emacs/lisp/extensions/"
 echo ""
-echo -e "${GREEN}Run:${RESET}  emacs   or   open /Applications/Emacs.app"
+echo -e "${GREEN}Run:${RESET}  emacs"
 echo ""
 echo "On first launch, use-package will install packages from MELPA."
 echo "This requires internet access and takes about 30 seconds."

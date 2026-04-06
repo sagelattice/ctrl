@@ -2,7 +2,7 @@
 
 ## Goal
 
-Replace the shell logic in `install-emacs.sh` and `check.sh` with two Emacs Lisp
+Replace the shell logic in `install.sh` and `check.sh` with two Emacs Lisp
 files — `lisp/bootstrap.el` and `lisp/check.el` — invoked headlessly via
 `emacs --batch`. Shell scripts retain only what Emacs cannot do: installing Emacs
 itself and its build-time system dependencies.
@@ -29,9 +29,9 @@ invocation are directly available once Emacs exists.
 
 ## Constraints
 
-- `install-emacs.sh` retains exactly the work that requires shell: Xcode CLT,
-  Homebrew, `brew install tree-sitter emacs`, the `/Applications` symlink, and the
-  shell `PATH` advisory. Everything else moves to `bootstrap.el`.
+- `install.sh` retains exactly the work that requires shell: Xcode CLT,
+  Homebrew, `brew install tree-sitter emacs`, and the shell `PATH` advisory.
+  Everything else moves to `bootstrap.el`.
 - `check.sh` retains exactly one responsibility: locating the Emacs binary and
   exec'ing `emacs --batch -l lisp/check.el`. All check logic moves to `check.el`.
 - Both `.el` files use lexical binding and end with `(provide ...)`.
@@ -54,16 +54,15 @@ invocation are directly available once Emacs exists.
 
 ```mermaid
 flowchart TD
-    A([install-emacs.sh]) --> B[Xcode CLT]
+    A([install.sh]) --> B[Xcode CLT]
     B --> C[Homebrew]
     C --> D[brew install tree-sitter emacs]
-    D --> E[/Applications/Emacs.app symlink]
-    E --> F["emacs --batch -l lisp/bootstrap.el"]
-    F --> G[Verify tree-sitter active]
-    G --> H[Create config scaffold\ndirs · symlinks · .gitignore · git init]
-    H --> I[For each extension:\nM-x name-install]
-    I --> J[Compile tree-sitter grammars]
-    J --> K([Done])
+    D --> E["emacs --batch -l lisp/bootstrap.el"]
+    E --> F[Verify tree-sitter active]
+    F --> G[Create config scaffold\ndirs · symlinks · .gitignore · git init]
+    G --> H[For each extension:\nM-x name-install]
+    H --> I[Compile tree-sitter grammars\nskip already-installed]
+    I --> J([Done])
 ```
 
 ### Check path
@@ -89,7 +88,7 @@ flowchart TD
 
 ### 1. `lisp/bootstrap.el`
 
-Invoked by `install-emacs.sh` as:
+Invoked by `install.sh` as:
 
 ```bash
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
@@ -133,12 +132,13 @@ by loading the file and `funcall`ing the install symbol. Log progress with `mess
 #### 1.4 Tree-sitter grammar compilation
 
 Define `treesit-language-source-alist` and iterate with `treesit-install-language-grammar`,
-catching errors per language. Report per-language success or failure via `message`.
+skipping languages for which a grammar is already available. Catch errors per language
+and report per-language success or failure via `message`.
 
 #### 1.5 Error accumulation
 
 Accumulate errors across all steps. Exit with `(kill-emacs 1)` if any step produced
-an error, so `install-emacs.sh` can detect failure and surface it.
+an error, so `install.sh` can detect failure and surface it.
 
 ---
 
@@ -208,35 +208,32 @@ non-zero is a failure. Capture and display the last few lines of output on failu
 
 ---
 
-### 3. Changes to `install-emacs.sh`
+### 3. `install.sh`
 
-Remove sections 5, 7, 8, and 9 (feature verification, config scaffold, extension
-bootstrap, tree-sitter grammars). Replace with a single call:
+The shell script handles only what requires shell: Xcode CLT, Homebrew,
+`tree-sitter`, and Emacs installation. All post-install work is delegated to
+`bootstrap.el` via a single call:
 
 ```bash
 section "Bootstrap (Elisp)"
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 ```
 
-Retain sections 1–4 (Xcode CLT, Homebrew, tree-sitter, Emacs install),
-the `/Applications/Emacs.app` symlink (section 6), and the shell `PATH`
-advisory (section 10), as these are system-level operations that run before or
-independent of Emacs.
+The shell `PATH` advisory follows as a user-facing note. Nothing else belongs
+in the script.
 
 ---
 
-### 4. Changes to `check.sh`
+### 4. `check.sh`
 
-Replace all logic after the Emacs binary lookup with a single call:
+The shell script locates the Emacs binary and delegates everything to `check.el`:
 
 ```bash
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/check.el" -f check-run
 exit $?
 ```
 
-The shell script retains only its binary-location logic as a convenience wrapper.
-Alternatively, `check.sh` may be replaced entirely with an alias or documented
-one-liner once `check.el` is stable.
+All check logic lives in `check.el`. The shell script is a thin launcher only.
 
 ---
 

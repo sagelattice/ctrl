@@ -42,7 +42,7 @@ to install, configure, and operate an extension.
 
 ```mermaid
 flowchart TD
-    A([install-emacs.sh]) --> B[M-x name-install\nfor each extension]
+    A([install.sh]) --> B[M-x name-install\nfor each extension]
     B --> C[Install system runtimes\nvia shell-command]
     C --> D[Install managed package deps\nvia shell-command]
     D --> E([Extension ready])
@@ -85,7 +85,7 @@ Each spec includes a `## Dependencies` section listing:
 
 ### 3. Bootstrap
 
-`install-emacs.sh` calls `M-x <name>-install` for each extension via batch Emacs.
+`install.sh` calls `M-x <name>-install` for each extension via batch Emacs.
 `M-x <name>-install` uses `shell-command` to install system runtimes and resolve
 managed package dependencies. That is the entire install story.
 
@@ -100,7 +100,7 @@ The `.el` performs two levels of checking:
     (e.g. `bun`, `mmdc`). Direct the user to `M-x <name>-install`.
   - **Emacs built-in capabilities** — verify any required Emacs feature is
     compiled in (e.g. `(image-type-available-p 'svg)`, `(featurep 'native-compile)`).
-    These are not installed by the extension; direct the user to `install-emacs.sh`
+    These are not installed by the extension; direct the user to `install.sh`
     with the specific rebuild step required.
 - **On command invocation** — re-check immediately before executing. Signal a
   user-facing error directing the user to `M-x <name>-install` if deps are absent.

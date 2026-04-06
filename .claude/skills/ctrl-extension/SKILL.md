@@ -155,10 +155,10 @@ If the extension needs third-party assets to be vendored:
 4. Reference only the vendored path from within the `.el` — no network paths
    at runtime
 
-### Wire `install-emacs.sh`
+### Wire `install.sh`
 
 Add a batch Emacs invocation of `M-x <name>-install` in the extension
-bootstrapping section of `install-emacs.sh`, following the existing pattern.
+bootstrapping section of `install.sh`, following the existing pattern.
 
 ---
 
@@ -177,16 +177,16 @@ Changes that are pure Elisp or managed-package changes:
 
 The user can pick up these changes by restarting Emacs (or `M-x load-file`).
 
-### Rebuild-required (run `install-emacs.sh` → rebuild Emacs)
+### Rebuild-required (run `install.sh` → rebuild Emacs)
 
 Any change that adds a **Homebrew library that Emacs links against at compile
 time** requires a full Emacs rebuild from source. Common signals:
 
-- A new `brew install <lib>` was added to `install-emacs.sh` in the
+- A new `brew install <lib>` was added to `install.sh` in the
   dependencies section (step 3, before the Emacs build step)
 - The extension checks `(image-type-available-p ...)`, `(featurep 'native-compile)`,
   `(treesit-available-p)`, or any other Emacs built-in capability at load time
-- The extension emits a `display-warning` directing the user to `install-emacs.sh`
+- The extension emits a `display-warning` directing the user to `install.sh`
   with a `brew reinstall emacs --build-from-source` instruction
 
 Examples of rebuild-triggering deps: `librsvg` (SVG), `libgccjit` (native comp),
@@ -199,12 +199,12 @@ again after Phase 4 passes. Do not leave the user in a broken state without
 a clear recovery path. The message should be:
 
 > This change added `<lib>` as a build-time dependency. Your current Emacs
-> build does not include it. Run `./install-emacs.sh` — it is idempotent and
+> build does not include it. Run `./install.sh` — it is idempotent and
 > will install the dependency then rebuild Emacs from source automatically.
 > Until the rebuild completes, the extension will emit a load-time warning and
 > the affected capability will be unavailable.
 
-**Invoke `./install-emacs.sh` on behalf of the user when possible.** The script
+**Invoke `./install.sh` on behalf of the user when possible.** The script
 is idempotent — safe to run at any time. If you have shell access, run it
 rather than just telling the user to run it. This closes the loop and avoids
 leaving the environment in a broken state.

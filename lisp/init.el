@@ -85,21 +85,9 @@
 ;;         (mapcar #'car treesit-language-source-alist))
 ;;
 ;; Only needs to be done once per machine (grammars persist in tree-sitter/).
+;; The canonical grammar list lives in lisp/grammars.el.
 
-(setq treesit-language-source-alist
-      '((clojure    "https://github.com/sogaiu/tree-sitter-clojure")
-        (python     "https://github.com/tree-sitter/tree-sitter-python")
-        (javascript "https://github.com/tree-sitter/tree-sitter-javascript")
-        (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
-                    "master" "typescript/src")
-        (tsx        "https://github.com/tree-sitter/tree-sitter-typescript"
-                    "master" "tsx/src")
-        (json       "https://github.com/tree-sitter/tree-sitter-json")
-        (css        "https://github.com/tree-sitter/tree-sitter-css")
-        (bash       "https://github.com/tree-sitter/tree-sitter-bash")
-        (toml       "https://github.com/ikatyang/tree-sitter-toml")
-        (yaml       "https://github.com/ikatyang/tree-sitter-yaml")
-        (markdown   "https://github.com/ikatyang/tree-sitter-markdown")))
+(load (expand-file-name "lisp/grammars" user-emacs-directory))
 
 ;;; ─── Tree-Sitter: Mode Remapping ─────────────────────────────────────────────
 ;;
@@ -349,7 +337,7 @@
          (root (if project (project-root project) default-directory))
          (default-directory root)
          (buf (ansi-term (or (getenv "SHELL") "/bin/zsh") "claude")))
-    (term-send-string (get-buffer-process buf) "claude\n")))
+    (term-send-string (get-buffer-process buf) "clear && claude\n")))
 
 (global-set-key (kbd "C-c a") #'ctrl/claude)
 

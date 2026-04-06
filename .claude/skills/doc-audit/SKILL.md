@@ -22,7 +22,7 @@ copy should become a reference per `docs/documentation-hygiene.md`.
 Every filename, path, and cross-reference in `.md` files — does the target exist?
 
 ### 4. Script headers vs reality
-For self-documenting scripts (`check.sh`, `install-emacs.sh`): compare the header's
+For self-documenting scripts (`check.sh`, `install.sh`): compare the header's
 stated steps/installs against what the code actually does. The script header is the
 source of truth; other docs must reference it, not copy it.
 
@@ -43,7 +43,7 @@ anything. Do not surface findings piecemeal as you read.
 Always read:
 - `CLAUDE.md`, `lisp/CLAUDE.md`, `lisp/extensions/CLAUDE.md`
 - All files under `docs/`
-- `check.sh`, `install-emacs.sh`
+- `check.sh`, `install.sh`
 - `lisp/init.el`
 
 For each extension found under `lisp/extensions/`:

@@ -1,6 +1,6 @@
 # ctrl
 
-Emacs dotfiles for GNU Emacs 30+ on macOS, with native compilation and tree-sitter enabled.
+Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 
 ## Requirements
 
@@ -11,12 +11,12 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with native compilation and tree-sitt
 ## Installation
 
 ```bash
-./install-emacs.sh
+./install.sh
 ```
 
-Installs Xcode CLT, Homebrew, `libgccjit`, and `tree-sitter`; builds GNU Emacs 30 from
-the official Homebrew formula; compiles tree-sitter grammars; and symlinks this repo into
-`~/.config/emacs/`. Idempotent — safe to run multiple times.
+Installs Xcode CLT, Homebrew, and `tree-sitter`; installs GNU Emacs 30 from the official
+Homebrew formula (pre-built bottle); compiles tree-sitter grammars; and symlinks this repo
+into `~/.config/emacs/`. Idempotent — safe to run multiple times.
 
 On first launch, `use-package` installs packages from MELPA. This requires internet access
 and takes about 30 seconds.
@@ -25,16 +25,19 @@ and takes about 30 seconds.
 
 ```
 ctrl/
-├── early-init.el        # Pre-GUI: GC tuning, native comp flags, UI suppression
-├── init.el              # Main config: packages, editing, Clojure/CIDER, Elisp dev
-├── install-emacs.sh     # Hermetic macOS installer
-├── check.sh             # Structural and quality checks for extensions
-├── lisp/extensions/     # Custom extensions (each in its own subdirectory)
-├── docs/                # Internal design documents
-└── vendor/              # Third-party assets as pinned git submodules
+├── install.sh           # Hermetic macOS installer
+├── check.sh             # Locates Emacs and delegates all checks to lisp/check.el
+├── lisp/                # Emacs Lisp configuration
+│   ├── early-init.el    # Pre-GUI: GC tuning, UI suppression
+│   ├── init.el          # Main config: packages, editing, Clojure/CIDER, Elisp dev
+│   ├── grammars.el      # Canonical tree-sitter grammar source list
+│   ├── bootstrap.el     # Config scaffold + extension bootstrap (headless)
+│   ├── check.el         # Quality checks: SPDX, structure, format, ERT (headless)
+│   └── extensions/      # Custom extensions (each in its own subdirectory)
+└── docs/                # Internal design documents
 ```
 
-Files are symlinked into `~/.config/emacs/` by `install-emacs.sh`. Never edit files at
+Files are symlinked into `~/.config/emacs/` by `install.sh`. Never edit files at
 their symlink destinations — always edit the source here.
 
 ## Custom Extensions
