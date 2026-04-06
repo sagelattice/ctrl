@@ -93,27 +93,18 @@ section "GNU Emacs (official Homebrew formula)"
 # Homebrew CI.  tree-sitter is a declared formula dependency and is included in
 # the bottle.  No build-from-source step is required or performed.
 
-needs_install=false
-
-if brew list --formula 2>/dev/null | grep -q "^emacs$"; then
-  if [[ -x "$EMACS_BIN" ]]; then
-    installed_ver=$("$EMACS_BIN" --version 2>/dev/null \
-                    | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
-    if [[ "$(printf '%s\n' "$EMACS_MIN_VERSION" "$installed_ver" \
-             | sort -V | head -1)" == "$EMACS_MIN_VERSION" ]]; then
-      ok "Emacs ${installed_ver} already installed"
-    else
-      warn "Emacs ${installed_ver} is below minimum ${EMACS_MIN_VERSION} — upgrading"
-      needs_install=true
-    fi
+if [[ -x "$EMACS_BIN" ]]; then
+  installed_ver=$("$EMACS_BIN" --version 2>/dev/null \
+                  | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+  if [[ "$(printf '%s\n' "$EMACS_MIN_VERSION" "$installed_ver" \
+           | sort -V | head -1)" == "$EMACS_MIN_VERSION" ]]; then
+    ok "Emacs ${installed_ver} already installed"
   else
-    needs_install=true
+    warn "Emacs ${installed_ver} is below minimum ${EMACS_MIN_VERSION} — upgrading"
+    brew install emacs
+    ok "Emacs installed"
   fi
 else
-  needs_install=true
-fi
-
-if [[ "$needs_install" == true ]]; then
   log "Installing GNU Emacs from official Homebrew formula..."
   brew install emacs
   ok "Emacs installed"

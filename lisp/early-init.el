@@ -24,20 +24,6 @@
                      (float-time (time-subtract after-init-time before-init-time))
                      gcs-done)))
 
-;;; ─── Native Compilation ───────────────────────────────────────────────────────
-;;
-;; Suppress async native-compilation warnings. These are noisy and usually
-;; relate to third-party packages using deprecated functions — not your problem.
-;; You can set this to 'errors to surface actual compilation failures.
-
-(when (featurep 'native-compile)
-  (setq native-comp-async-report-warnings-errors nil)
-  ;; Where to cache .eln files. Defaults to ~/.emacs.d/eln-cache/
-  ;; Explicit path makes it easier to find and clean up.
-  (when (fboundp 'startup-redirect-eln-cache)
-    (startup-redirect-eln-cache
-     (expand-file-name "eln-cache/" user-emacs-directory))))
-
 ;;; ─── Package System ───────────────────────────────────────────────────────────
 ;;
 ;; Inhibit the default package.el initialization here — we'll initialize it

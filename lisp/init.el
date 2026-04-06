@@ -37,11 +37,6 @@
 
 (package-initialize)
 
-;; Bootstrap use-package (built into Emacs 29+; this is a no-op on 29+)
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
 (require 'use-package)
 
 ;; Always install packages if not present — removes the need for :ensure t
@@ -57,23 +52,6 @@
   (dolist (subdir (directory-files ext-dir t "^[^.]"))
     (when (file-directory-p subdir)
       (add-to-list 'load-path subdir))))
-
-;;; ─── Native Compilation: Runtime Settings ────────────────────────────────────
-;;
-;; early-init.el handled the compile-time flags. These are the runtime settings
-;; that control how native comp behaves once Emacs is running.
-
-(when (featurep 'native-compile)
-  ;; Number of parallel workers for async native compilation.
-  ;; nil = auto-detect (usually number of CPU cores / 2)
-  (setq native-comp-async-jobs-number nil)
-
-  ;; Optimization level: 0 = fastest compile, 3 = most optimized output.
-  ;; 2 is a good balance for personal config.
-  (setq native-opt-speed 2)
-
-  ;; Verbosity during async compilation. 0 = silent, 3 = very noisy.
-  (setq native-comp-verbose 0))
 
 ;;; ─── Tree-Sitter: Grammar Sources ────────────────────────────────────────────
 ;;

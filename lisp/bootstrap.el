@@ -83,13 +83,8 @@ Warns and skips if DST is a real file or directory."
     (make-symbolic-link src dst)
     (bootstrap--ok "Symlinked %s" (file-name-nondirectory dst)))))
 
-(defconst bootstrap--gitignore-content
-  "eln-cache/\ntree-sitter/\nbackups/\nauto-saves/\ncustom.el\n\
-cider-repl-history\n*.elc\n*~\n\\#*\\#\n.\\#*\n.DS_Store\n"
-  "Content written to ~/.config/emacs/.gitignore on first install.")
-
 (defun bootstrap--config-scaffold ()
-  "Create the ~/.config/emacs/ directory structure, symlinks, .gitignore, and git repo.
+  "Create the ~/.config/emacs/ directory structure and symlinks.
 All operations are idempotent."
   (bootstrap--section "Config scaffold")
   (let* ((config-dir (expand-file-name "~/.config/emacs"))
@@ -105,20 +100,7 @@ All operations are idempotent."
     ;; Symlinks.
     (bootstrap--link early-init (expand-file-name "early-init.el" config-dir))
     (bootstrap--link init       (expand-file-name "init.el"       config-dir))
-    (bootstrap--link lisp-src   (expand-file-name "lisp"          config-dir))
-    ;; .gitignore — write only if absent.
-    (let ((gitignore (expand-file-name ".gitignore" config-dir)))
-      (unless (file-exists-p gitignore)
-        (write-region bootstrap--gitignore-content nil gitignore nil 'silent)
-        (bootstrap--ok ".gitignore written")))
-    ;; Git repo — initialise only if absent.
-    (if (file-directory-p (expand-file-name ".git" config-dir))
-        (bootstrap--ok "Git repo already present")
-      (call-process "git" nil nil nil "-C" config-dir "init" "-q")
-      (call-process "git" nil nil nil "-C" config-dir "add" ".")
-      (call-process "git" nil nil nil "-C" config-dir
-                    "commit" "-q" "-m" "Initial Emacs config scaffold")
-      (bootstrap--ok "Git repo initialized at %s" config-dir))))
+    (bootstrap--link lisp-src   (expand-file-name "lisp"          config-dir))))
 
 ;; ── 3. Extension bootstrap ────────────────────────────────────────────────────
 
