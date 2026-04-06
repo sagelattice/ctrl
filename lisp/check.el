@@ -75,7 +75,8 @@
                   (not (string-match-p
                         "/\\(\\.git\\|node_modules\\|vendor\\)\\(/\\|$\\)"
                         dir)))))
-      (unless (string-match-p "/\\(\\.git\\|node_modules\\|vendor\\)/" f)
+      (unless (or (string-match-p "/\\(\\.git\\|node_modules\\|vendor\\)/" f)
+                  (string-prefix-p ".#" (file-name-nondirectory f)))
         (push f results)))
     (nreverse results)))
 

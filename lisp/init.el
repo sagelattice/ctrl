@@ -340,6 +340,19 @@
     (load-file buffer-file-name)
     (message "Loaded: %s" buffer-file-name)))
 
+;;; ─── Claude Integration ───────────────────────────────────────────────────────
+
+(defun ctrl/claude ()
+  "Open ansi-term at project root (or current directory) and launch claude."
+  (interactive)
+  (let* ((project (project-current))
+         (root (if project (project-root project) default-directory))
+         (default-directory root)
+         (buf (ansi-term (or (getenv "SHELL") "/bin/zsh") "claude")))
+    (term-send-string (get-buffer-process buf) "claude\n")))
+
+(global-set-key (kbd "C-c a") #'ctrl/claude)
+
 ;;; ─── Flycheck: Syntax Checking ────────────────────────────────────────────────
 
 (use-package flycheck
