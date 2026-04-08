@@ -27,9 +27,9 @@ ctrl/
                 └── <name>-test.el
 ```
 
-`install.sh` symlinks these files into `~/.config/emacs/` — do not edit them there directly. Edit the source files here; the symlinks keep the live config in sync.
+`install.sh` symlinks these files into `user-emacs-directory` — do not edit them there directly. Edit the source files here; the symlinks keep the live config in sync.
 
-Expected live config layout:
+Expected live config layout (XDG default):
 
 ```
 ~/.config/emacs/
@@ -48,7 +48,7 @@ Expected live config layout:
 ./install.sh
 ```
 
-Idempotent. Installs Xcode CLT, Homebrew, `tree-sitter`, and the Emacs 30 Homebrew formula (pre-built bottle), compiles tree-sitter grammars, creates the config scaffold, and symlinks this repo into `~/.config/emacs/`.
+Idempotent. Installs Xcode CLT, Homebrew, `tree-sitter`, and the Emacs 30 Homebrew formula (pre-built bottle), compiles tree-sitter grammars, creates the config scaffold, and symlinks this repo into `user-emacs-directory`.
 
 **Note:** Native compilation (`libgccjit`) is not available with the standard Homebrew `emacs` formula. The formula does not declare `libgccjit` as a dependency, so Homebrew's sandboxed build environment never links against it regardless of whether it is installed on the system. Native compilation requires either `emacs-plus` (third-party tap) or a manual build from source.
 

@@ -84,10 +84,12 @@ Warns and skips if DST is a real file or directory."
     (bootstrap--ok "Symlinked %s" (file-name-nondirectory dst)))))
 
 (defun bootstrap--config-scaffold ()
-  "Create the ~/.config/emacs/ directory structure and symlinks.
-All operations are idempotent."
+  "Create the Emacs config directory structure and symlinks.
+Uses `user-emacs-directory' so the symlinks land wherever Emacs
+actually looks — ~/.config/emacs (XDG) or ~/.emacs.d (classic),
+whichever is active on this machine.  All operations are idempotent."
   (bootstrap--section "Config scaffold")
-  (let* ((config-dir (expand-file-name "~/.config/emacs"))
+  (let* ((config-dir (directory-file-name (expand-file-name user-emacs-directory)))
          (lisp-src   (directory-file-name bootstrap--lisp-dir))
          (early-init (expand-file-name "early-init.el" bootstrap--lisp-dir))
          (init       (expand-file-name "init.el" bootstrap--lisp-dir)))

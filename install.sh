@@ -145,8 +145,9 @@ INSTALLED_VER=$("$EMACS_BIN" --version 2>/dev/null | head -1 | grep -oE '[0-9]+\
 echo ""
 printf "  %-18s %s\n" "Emacs version:"  "${INSTALLED_VER}"
 printf "  %-18s %s\n" "Emacs binary:"   "${EMACS_BIN}"
-printf "  %-18s %s\n" "Config dir:"     "${HOME}/.config/emacs"
-printf "  %-18s %s\n" "Extensions:"     "${HOME}/.config/emacs/lisp/extensions/"
+CONFIG_DIR=$("$EMACS_BIN" --batch --eval '(princ user-emacs-directory)' 2>/dev/null)
+printf "  %-18s %s\n" "Config dir:"     "${CONFIG_DIR}"
+printf "  %-18s %s\n" "Extensions:"     "${CONFIG_DIR}lisp/extensions/"
 echo ""
 echo -e "${GREEN}Run:${RESET}  emacs"
 echo ""

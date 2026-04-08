@@ -123,20 +123,12 @@
          (config-dir (expand-file-name "emacs" tmpdir)))
     (unwind-protect
         (bootstrap-test--silently
-          (cl-letf (((symbol-function 'expand-file-name)
-                     (lambda (name &optional base)
-                       (if (and (stringp name) (string= name "~/.config/emacs"))
-                           config-dir
-                         (if base
-                             (concat (file-name-as-directory base) name)
-                           (concat "/" name)))))
-                    ((symbol-function 'bootstrap--link)   #'ignore)
-                    ((symbol-function 'call-process)      (lambda (&rest _) 0))
-                    ((symbol-function 'write-region)      #'ignore))
-            (bootstrap--config-scaffold)
-            (should (file-directory-p config-dir))
-            (should (file-directory-p (expand-file-name "backups"    config-dir)))
-            (should (file-directory-p (expand-file-name "auto-saves" config-dir)))))
+          (cl-letf (((symbol-function 'bootstrap--link) #'ignore))
+            (let ((user-emacs-directory (file-name-as-directory config-dir)))
+              (bootstrap--config-scaffold)
+              (should (file-directory-p config-dir))
+              (should (file-directory-p (expand-file-name "backups"    config-dir)))
+              (should (file-directory-p (expand-file-name "auto-saves" config-dir))))))
       (delete-directory tmpdir t))))
 
 (ert-deftest bootstrap-test-config-scaffold-skips-existing-gitignore ()
@@ -150,15 +142,9 @@
           (make-directory config-dir t)
           (write-region sentinel nil gitignore nil 'silent)
           (bootstrap-test--silently
-            (cl-letf (((symbol-function 'bootstrap--link) #'ignore)
-                      ((symbol-function 'call-process)    (lambda (&rest _) 0))
-                      ((symbol-function 'expand-file-name)
-                       (lambda (name &optional base)
-                         (cond
-                          ((string= name "~/.config/emacs") config-dir)
-                          (base (concat (file-name-as-directory base) name))
-                          (t (concat "/" name))))))
-              (bootstrap--config-scaffold)))
+            (cl-letf (((symbol-function 'bootstrap--link) #'ignore))
+              (let ((user-emacs-directory (file-name-as-directory config-dir)))
+                (bootstrap--config-scaffold))))
           (should (string= (with-temp-buffer
                              (insert-file-contents gitignore)
                              (buffer-string))

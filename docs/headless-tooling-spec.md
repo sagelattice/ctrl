@@ -104,10 +104,10 @@ non-zero status rather than silently continuing.
 
 #### 1.2 Config scaffold
 
-Create the directory structure under `~/.config/emacs/`:
+Create the directory structure under `user-emacs-directory`:
 
 ```
-~/.config/emacs/
+<user-emacs-directory>/
 ├── backups/
 └── auto-saves/
 ```
@@ -121,7 +121,7 @@ idempotency rules as the current `link_file` / `link_dir` shell functions:
   destroy user data).
 
 Write `.gitignore` only if it does not already exist. Initialize the git repo in
-`~/.config/emacs/` only if `.git/` is absent, using `call-process`.
+`user-emacs-directory` only if `.git/` is absent, using `call-process`.
 
 #### 1.3 Extension bootstrap
 
