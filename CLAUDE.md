@@ -10,7 +10,7 @@ This repository is the canonical source of truth for all dotfiles. Files live he
 
 ```
 ctrl/
-├── install.sh              # Hermetic macOS installer (Homebrew + Emacs 30)
+├── install.sh              # Setup entrypoint: assert Emacs 30+ present, run bootstrap.el
 ├── check.sh                # Locate Emacs and delegate to lisp/check.el
 └── lisp/
     ├── early-init.el       # Pre-GUI: GC tuning, UI suppression
@@ -42,16 +42,6 @@ Expected live config layout (XDG default):
 └── custom.el            # M-x customize output (gitignored)
 ```
 
-## Installation
-
-```bash
-./install.sh
-```
-
-Idempotent. Installs Xcode CLT, Homebrew, `tree-sitter`, and the Emacs 30 Homebrew formula (pre-built bottle), compiles tree-sitter grammars, creates the config scaffold, and symlinks this repo into `user-emacs-directory`.
-
-**Note:** Native compilation (`libgccjit`) is not available with the standard Homebrew `emacs` formula. The formula does not declare `libgccjit` as a dependency, so Homebrew's sandboxed build environment never links against it regardless of whether it is installed on the system. Native compilation requires either `emacs-plus` (third-party tap) or a manual build from source.
-
 ## Package Stack
 
 | Layer | Package | Purpose |
@@ -73,7 +63,7 @@ Archives: GNU ELPA (priority 10) > NonGNU ELPA (8) > MELPA (5).
 
 Configured languages: clojure, python, javascript, typescript, tsx, json, css, bash, toml, yaml, markdown.
 
-Grammars are compiled by `install.sh`. To install one manually:
+Grammars are compiled by `bootstrap.el` during setup. To install one manually:
 
 ```
 M-x treesit-install-language-grammar RET <language> RET
@@ -107,10 +97,15 @@ Extensions follow the architecture defined in `docs/extension-architecture.md`. 
 
 This is the single entry point for all quality checks and unit tests. Run it after every change. It covers: SPDX header insertion, structural validation, formatting, byte-compilation, checkdoc, and ERT tests for all extensions plus `bootstrap.el` and `check.el`. Exits non-zero on any failure.
 
+## Naming Conventions
+
+- Follow standard Elisp convention: prefix all symbols with the file/package name, using a single dash for public symbols and double dash for private ones (`bootstrap--lisp-dir`, `check--run-spdx`).  Shared modules use the project name as prefix: `ctrl-log--ok`, not `log--ok`.
+
 ## Development Process
 
-- Shell is for installing Emacs itself (Homebrew, build toolchain, tree-sitter grammars).  Everything beyond that — extension discovery, loading, configuration — belongs in Emacs Lisp.  Resist the pull to reach for shell when Elisp will do.
-- All system configuration (symlinks, directory scaffold, extension bootstrap) must go through `install.sh`.  Never apply configuration changes with ad-hoc shell commands — the script is the deterministic, idempotent record of system state.
-- Each dependency has exactly one canonical installation site.  Emacs build dependencies (tree-sitter, etc.) are installed in `install.sh`.  Extension runtime dependencies (language runtimes, managed packages) are installed in that extension's `M-x <name>-install`.  Never install the same dependency in two places.
+- System-level prerequisites (Xcode CLT, Homebrew, tree-sitter, Emacs itself) are documented requirements.  `bootstrap.el` asserts they are present; `install.sh` asserts Emacs is present.  Neither installs them.
+- Shell is for asserting Emacs is present and invoking `bootstrap.el`.  Everything beyond that — config scaffold, extension setup, grammar compilation — belongs in Emacs Lisp.  Resist the pull to reach for shell when Elisp will do.
+- All configuration setup must go through `install.sh` → `bootstrap.el`.  Never apply configuration changes with ad-hoc shell commands — the script is the deterministic, idempotent record of system state.
+- Each dependency has exactly one canonical location.  System prerequisites are documented in the Installation section and asserted in `bootstrap.el`.  Extension runtime dependencies (external binaries, language runtimes) are asserted in `M-x <name>-install`.  Elisp package dependencies are declared via `use-package` or `Package-Requires` and installed by Emacs on first launch.
 - Extensions that require Emacs built-in capabilities must assert those requirements as `display-warning` calls at load time — not inside the install function.  The install function only installs what it owns.
 - When a coding error causes `./check.sh` to fail, or a bug surfaces in a live session, record it in `docs/elisp-pitfalls.md` (general Elisp) or `docs/elisp-extension-pitfalls.md` (extension-specific) so it is not reproduced in future extensions.

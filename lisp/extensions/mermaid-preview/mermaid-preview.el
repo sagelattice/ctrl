@@ -83,13 +83,11 @@ Directs the user to run `M-x mermaid-preview-install'."
 ;; ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 (defun mermaid-preview-install ()
-  "Install Bun (JS runtime) and mmdc (Mermaid CLI) for mermaid-preview.
-This command is idempotent — safe to run multiple times.
-Called automatically by install.sh; also available interactively to
-repair or re-run the extension bootstrap."
+  "Assert Bun is present and install mmdc via the local package.json.
+Bun is a prerequisite for this extension.  This command is idempotent."
   (interactive)
-  (message "Mermaid-preview: installing Bun via Homebrew...")
-  (shell-command "brew install bun")
+  (unless (mermaid-preview--bun-available-p)
+    (user-error "Mermaid-preview: bun not found — it is a required prerequisite"))
   (message "Mermaid-preview: installing mmdc via bun install...")
   (shell-command (format "cd %s && bun install"
                          (shell-quote-argument mermaid-preview--dir)))

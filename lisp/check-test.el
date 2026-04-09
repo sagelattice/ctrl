@@ -19,21 +19,21 @@
 ;; ── Helpers ───────────────────────────────────────────────────────────────────
 
 (defmacro check-test--with-clean-errors (&rest body)
-  "Execute BODY with `check--errors' reset to 0, then restore it."
+  "Execute BODY with `ctrl-log--errors' reset to 0, then restore it."
   (declare (indent 0))
-  `(let ((check--errors 0))
+  `(let ((ctrl-log--errors 0))
      ,@body))
 
 (defmacro check-test--silently (&rest body)
-  "Execute BODY with all check logging and incidental Emacs messages suppressed.
-`check--fail' still increments `check--errors' but emits no output."
+  "Execute BODY with all logging and incidental Emacs messages suppressed.
+`ctrl-log--fail' still increments `ctrl-log--errors' but emits no output."
   (declare (indent 0))
-  `(cl-letf (((symbol-function 'check--section) #'ignore)
-             ((symbol-function 'check--ok)      #'ignore)
-             ((symbol-function 'check--log)     #'ignore)
-             ((symbol-function 'check--fail)
+  `(cl-letf (((symbol-function 'ctrl-log--section) #'ignore)
+             ((symbol-function 'ctrl-log--ok)      #'ignore)
+             ((symbol-function 'ctrl-log--log)     #'ignore)
+             ((symbol-function 'ctrl-log--fail)
               (lambda (&rest _)
-                (setq check--errors (1+ check--errors))))
+                (setq ctrl-log--errors (1+ ctrl-log--errors))))
              ((symbol-function 'message)        #'ignore))
      ,@body))
 
@@ -160,7 +160,7 @@ OPTS is a plist of optional overrides:
           (check-test--with-clean-errors
             (should (check--validate-extension
                      "myext" (expand-file-name "myext" tmpdir)))
-            (should (= check--errors 0))))
+            (should (= ctrl-log--errors 0))))
       (delete-directory tmpdir t))))
 
 (ert-deftest check-test-validate-extension-fails-no-lexical ()
@@ -216,7 +216,7 @@ OPTS is a plist of optional overrides:
           (check-test--with-clean-errors
             (should (check--validate-extension
                      "myext" (expand-file-name "myext" tmpdir)))
-            (should (= check--errors 0))))
+            (should (= ctrl-log--errors 0))))
       (delete-directory tmpdir t))))
 
 ;; ── Structure run — skel skipped ──────────────────────────────────────────────
@@ -237,12 +237,12 @@ OPTS is a plist of optional overrides:
 ;; ── Error accumulation ────────────────────────────────────────────────────────
 
 (ert-deftest check-test-fail-increments-error-count ()
-  "check--fail increments `check--errors' by 1 each call."
+  "check--fail increments `ctrl-log--errors' by 1 each call."
   (check-test--with-clean-errors
     (check-test--silently
-      (check--fail "First")
-      (check--fail "Second")
-      (should (= check--errors 2)))))
+      (ctrl-log--fail "First")
+      (ctrl-log--fail "Second")
+      (should (= ctrl-log--errors 2)))))
 
 (provide 'check-test)
 

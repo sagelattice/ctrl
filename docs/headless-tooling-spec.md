@@ -4,8 +4,8 @@
 
 Replace the shell logic in `install.sh` and `check.sh` with two Emacs Lisp
 files — `lisp/bootstrap.el` and `lisp/check.el` — invoked headlessly via
-`emacs --batch`. Shell scripts retain only what Emacs cannot do: installing Emacs
-itself and its build-time system dependencies.
+`emacs --batch`. Shell scripts retain only what Emacs cannot do: asserting that
+Emacs is installed and meets the version requirement.
 
 ---
 
@@ -29,9 +29,10 @@ invocation are directly available once Emacs exists.
 
 ## Constraints
 
-- `install.sh` retains exactly the work that requires shell: Xcode CLT,
-  Homebrew, `brew install tree-sitter emacs`, and the shell `PATH` advisory.
-  Everything else moves to `bootstrap.el`.
+- `install.sh` retains exactly one responsibility: asserting that Emacs 30+ is
+  installed and invoking `bootstrap.el`. System prerequisites (Xcode CLT,
+  Homebrew, tree-sitter) are documented requirements asserted by `bootstrap.el`,
+  not installed by either script. Everything else moves to `bootstrap.el`.
 - `check.sh` retains exactly one responsibility: locating the Emacs binary and
   exec'ing `emacs --batch -l lisp/check.el`. All check logic moves to `check.el`.
 - Both `.el` files use lexical binding and end with `(provide ...)`.
@@ -54,15 +55,13 @@ invocation are directly available once Emacs exists.
 
 ```mermaid
 flowchart TD
-    A([install.sh]) --> B[Xcode CLT]
-    B --> C[Homebrew]
-    C --> D[brew install tree-sitter emacs]
-    D --> E["emacs --batch -l lisp/bootstrap.el"]
-    E --> F[Verify tree-sitter active]
-    F --> G[Create config scaffold\ndirs · symlinks · .gitignore · git init]
-    G --> H[For each extension:\nM-x name-install]
-    H --> I[Compile tree-sitter grammars\nskip already-installed]
-    I --> J([Done])
+    A([install.sh]) --> B[Assert Emacs 30+ present]
+    B --> C["emacs --batch -l lisp/bootstrap.el -f bootstrap-run"]
+    C --> D[Assert prerequisites]
+    D --> E[Config scaffold]
+    E --> F[Extension setup]
+    F --> G[Grammar compilation]
+    G --> H([Done])
 ```
 
 ### Check path
@@ -210,17 +209,16 @@ non-zero is a failure. Capture and display the last few lines of output on failu
 
 ### 3. `install.sh`
 
-The shell script handles only what requires shell: Xcode CLT, Homebrew,
-`tree-sitter`, and Emacs installation. All post-install work is delegated to
-`bootstrap.el` via a single call:
+The shell script has one responsibility: assert that Emacs 30+ is present and
+delegate to `bootstrap.el`:
 
 ```bash
-section "Bootstrap (Elisp)"
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 ```
 
-The shell `PATH` advisory follows as a user-facing note. Nothing else belongs
-in the script.
+System prerequisites (Xcode CLT, Homebrew, tree-sitter) are documented
+requirements. `bootstrap.el` asserts they are present. Neither script installs
+them.
 
 ---
 

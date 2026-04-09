@@ -19,22 +19,22 @@
 ;; ── Helpers ───────────────────────────────────────────────────────────────────
 
 (defmacro bootstrap-test--with-clean-errors (&rest body)
-  "Execute BODY with `bootstrap--errors' reset to 0, then restore it."
+  "Execute BODY with `ctrl-log--errors' reset to 0, then restore it."
   (declare (indent 0))
-  `(let ((bootstrap--errors 0))
+  `(let ((ctrl-log--errors 0))
      ,@body))
 
 (defmacro bootstrap-test--silently (&rest body)
-  "Execute BODY with all bootstrap logging suppressed.
-`bootstrap--fail' still increments `bootstrap--errors' but emits no output."
+  "Execute BODY with all logging suppressed.
+`ctrl-log--fail' still increments `ctrl-log--errors' but emits no output."
   (declare (indent 0))
-  `(cl-letf (((symbol-function 'bootstrap--section) #'ignore)
-             ((symbol-function 'bootstrap--ok)      #'ignore)
-             ((symbol-function 'bootstrap--log)     #'ignore)
-             ((symbol-function 'bootstrap--warn)    #'ignore)
-             ((symbol-function 'bootstrap--fail)
+  `(cl-letf (((symbol-function 'ctrl-log--section) #'ignore)
+             ((symbol-function 'ctrl-log--ok)      #'ignore)
+             ((symbol-function 'ctrl-log--log)     #'ignore)
+             ((symbol-function 'ctrl-log--warn)    #'ignore)
+             ((symbol-function 'ctrl-log--fail)
               (lambda (&rest _)
-                (setq bootstrap--errors (1+ bootstrap--errors)))))
+                (setq ctrl-log--errors (1+ ctrl-log--errors)))))
      ,@body))
 
 ;; ── Feature verification ──────────────────────────────────────────────────────
@@ -45,7 +45,7 @@
     (bootstrap-test--silently
       (cl-letf (((symbol-function 'treesit-available-p) (lambda () t)))
         (bootstrap--verify-features)
-        (should (= bootstrap--errors 0))))))
+        (should (= ctrl-log--errors 0))))))
 
 (ert-deftest bootstrap-test-verify-features-fails-when-treesit-absent ()
   "Error recorded when tree-sitter is not available."
@@ -53,7 +53,7 @@
     (bootstrap-test--silently
       (cl-letf (((symbol-function 'treesit-available-p) (lambda () nil)))
         (bootstrap--verify-features)
-        (should (= bootstrap--errors 1))))))
+        (should (= ctrl-log--errors 1))))))
 
 ;; ── Symlink helper ────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@
           (make-symbolic-link src dst)
           (bootstrap-test--with-clean-errors
             (bootstrap--link src dst)
-            (should (= bootstrap--errors 0)))
+            (should (= ctrl-log--errors 0)))
           (should (string= (file-symlink-p dst) src)))
       (delete-directory tmpdir t))))
 
@@ -111,7 +111,7 @@
           (write-region "" nil dst nil 'silent)
           (bootstrap-test--with-clean-errors
             (bootstrap--link src dst)
-            (should (= bootstrap--errors 0)))
+            (should (= ctrl-log--errors 0)))
           (should (not (file-symlink-p dst))))
       (delete-directory tmpdir t))))
 
@@ -206,18 +206,18 @@
           (bootstrap-test--with-clean-errors
             (let ((bootstrap--lisp-dir (file-name-as-directory tmpdir)))
               (bootstrap--install-extensions))
-            (should (= bootstrap--errors 0))))
+            (should (= ctrl-log--errors 0))))
       (delete-directory tmpdir t))))
 
 ;; ── Error accumulation ────────────────────────────────────────────────────────
 
 (ert-deftest bootstrap-test-fail-increments-error-count ()
-  "bootstrap--fail increments `bootstrap--errors' by 1 each call."
+  "bootstrap--fail increments `ctrl-log--errors' by 1 each call."
   (bootstrap-test--with-clean-errors
     (bootstrap-test--silently
-      (bootstrap--fail "First error")
-      (bootstrap--fail "Second error")
-      (should (= bootstrap--errors 2)))))
+      (ctrl-log--fail "First error")
+      (ctrl-log--fail "Second error")
+      (should (= ctrl-log--errors 2)))))
 
 (provide 'bootstrap-test)
 

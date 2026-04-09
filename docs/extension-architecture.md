@@ -42,8 +42,8 @@ to install, configure, and operate an extension.
 
 ```mermaid
 flowchart TD
-    A([install.sh]) --> B[M-x name-install\nfor each extension]
-    B --> C[Install system runtimes\nvia shell-command]
+    A([bootstrap.el]) --> B[M-x name-install\nfor each extension]
+    B --> C[Assert system runtimes present]
     C --> D[Install managed package deps\nvia shell-command]
     D --> E([Extension ready])
 ```
@@ -77,17 +77,17 @@ is not part of the extension.
 
 Each spec includes a `## Dependencies` section listing:
 
-- **System runtimes** — tools installed at the OS level (e.g. Bun via Homebrew),
-  invoked via `shell-command` inside `M-x <name>-install`
+- **System runtimes** — tools installed at the OS level (e.g. Bun via Homebrew);
+  prerequisites asserted by `M-x <name>-install`, not installed by it
 - **Managed packages** — versioned dependencies declared in `package.json`, installed
   via `shell-command` inside `M-x <name>-install`; lockfile committed for reproducibility
 - **Emacs packages** — declared via `Package-Requires` in the `.el` header
 
 ### 3. Bootstrap
 
-`install.sh` calls `M-x <name>-install` for each extension via batch Emacs.
-`M-x <name>-install` uses `shell-command` to install system runtimes and resolve
-managed package dependencies. That is the entire install story.
+`bootstrap.el` calls `M-x <name>-install` for each extension via batch Emacs.
+`M-x <name>-install` asserts system runtimes are present and installs managed
+package dependencies via `shell-command`. That is the entire install story.
 
 ### 4. Runtime Dependency Checks
 
@@ -100,8 +100,8 @@ The `.el` performs two levels of checking:
     (e.g. `bun`, `mmdc`). Direct the user to `M-x <name>-install`.
   - **Emacs built-in capabilities** — verify any required Emacs feature is
     compiled in (e.g. `(image-type-available-p 'svg)`, `(featurep 'native-compile)`).
-    These are not installed by the extension; direct the user to `install.sh`
-    with the specific rebuild step required.
+    These are prerequisites of the extension; direct the user to the specific
+    Homebrew formula or build option required.
 - **On command invocation** — re-check immediately before executing. Signal a
   user-facing error directing the user to `M-x <name>-install` if deps are absent.
 

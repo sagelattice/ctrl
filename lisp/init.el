@@ -20,6 +20,22 @@
 ;;               └── tests/
 ;;                   └── <name>-test.el
 
+;;; ─── Startup Progress ────────────────────────────────────────────────────────
+;;
+;; early-init.el suppresses redisplay and messages during startup to prevent
+;; UI flicker.  On a first boot the screen stays blank while packages download.
+;; This helper temporarily lifts both inhibitions so the user can see what's
+;; happening without giving up the flicker-free experience on subsequent boots.
+
+(defun ctrl--progress (fmt &rest args)
+  "Show FMT+ARGS as a progress message even during inhibited startup.
+Temporarily lifts `inhibit-redisplay' and `inhibit-message', emits the
+message, and forces an immediate redisplay."
+  (let ((inhibit-redisplay nil)
+        (inhibit-message nil))
+    (message "[ctrl] %s" (apply #'format fmt args))
+    (redisplay t)))
+
 ;;; ─── Package Management ───────────────────────────────────────────────────────
 
 (require 'package)
@@ -36,6 +52,12 @@
         ("melpa"  . 5)))
 
 (package-initialize)
+
+;; On first boot, package-archive-contents is empty — fetch archive metadata
+;; before use-package tries to install anything.
+(when (null package-archive-contents)
+  (ctrl--progress "Refreshing package archives (first boot)...")
+  (package-refresh-contents))
 
 (require 'use-package)
 
@@ -88,6 +110,7 @@
 
 ;;; ─── Theme ────────────────────────────────────────────────────────────────────
 
+(ctrl--progress "Loading theme...")
 (load-theme 'modus-vivendi :no-confirm)
 
 ;;; ─── Core UI ──────────────────────────────────────────────────────────────────
@@ -312,6 +335,18 @@
 (use-package flycheck
   :hook (prog-mode . flycheck-mode))
 
+;;; ─── Markdown ─────────────────────────────────────────────────────────────────
+;;
+;; markdown-mode provides syntax highlighting, structure navigation, and
+;; preview support for Markdown files.  Code blocks are fontified using
+;; the native major mode for each language fence.
+
+(use-package markdown-mode
+  :mode (("\\.md\\'"       . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :custom
+  (markdown-fontify-code-blocks-natively t))
+
 ;;; ─── Custom Extensions Loader ────────────────────────────────────────────────
 ;;
 ;; Each extension subdirectory contains a <name>.el file that owns all logic
@@ -324,6 +359,7 @@
       (let* ((name (file-name-nondirectory subdir))
              (el (expand-file-name (concat name ".el") subdir)))
         (when (file-exists-p el)
+          (ctrl--progress "Loading extension: %s" name)
           (load el nil t))))))
 
 ;;; init.el ends here

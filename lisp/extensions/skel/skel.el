@@ -12,7 +12,7 @@
 ;;   4. Run ./check.sh
 ;;
 ;; Usage:
-;;   M-x skel-install   Install required runtimes and packages (STUB)
+;;   M-x skel-install   Assert runtimes present; install managed packages (STUB)
 ;;   M-x skel-run       Run the extension (STUB)
 
 ;;; Commentary:
@@ -39,11 +39,11 @@
 ;; ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 (defun skel-install ()
-  "Install system runtimes and managed package dependencies for skel.
+  "Assert system runtimes are present and install managed package dependencies.
 This command is idempotent — safe to run multiple times."
   (interactive)
-  ;; STUB: replace with shell-command calls to install system runtimes and
-  ;; managed packages.  See docs/extension-architecture.md for the pattern.
+  ;; STUB: assert system runtimes via executable-find, then install managed
+  ;; packages via shell-command.  See docs/extension-architecture.md for the pattern.
   (message "skel: installation complete."))
 
 ;; ── Commands ──────────────────────────────────────────────────────────────────

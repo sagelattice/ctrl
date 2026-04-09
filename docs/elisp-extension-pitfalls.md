@@ -14,6 +14,27 @@ fail; use `"My-pkg: something"` or restructure the message.
 
 ---
 
+**Use `executable-find` to locate external binaries**
+
+Use `executable-find` to check for and locate executables on `exec-path`.
+Hardcoding paths (e.g. `/opt/homebrew/bin/bun`) breaks on machines with
+different Homebrew prefixes or non-Homebrew installs:
+
+```elisp
+;; Wrong — hardcoded path breaks on Intel Macs and non-Homebrew installs:
+(defconst my-ext--bun "/opt/homebrew/bin/bun")
+
+;; Correct — searches exec-path, returns nil if absent:
+(defconst my-ext--bun (executable-find "bun")
+  "Path to the bun executable, or nil if not installed.")
+
+(defun my-ext-install ()
+  (unless my-ext--bun
+    (user-error "My-ext: bun not found — install with: brew install bun")))
+```
+
+---
+
 **Extension-relative paths must be captured at load time**
 
 `load-file-name` is only non-nil during the `load` call itself. Inside function
