@@ -24,8 +24,9 @@
 
 ;; Load the canonical grammar list (shared with init.el).
 (load (expand-file-name "grammars" bootstrap--lisp-dir) nil t)
-;; Load shared batch logging.
-(load (expand-file-name "ctrl-log" bootstrap--lisp-dir) nil t)
+;; Load shared batch logging and file discovery.
+(load (expand-file-name "ctrl-log"    bootstrap--lisp-dir) nil t)
+(load (expand-file-name "ctrl-source" bootstrap--lisp-dir) nil t)
 
 ;; ── 1. Feature verification ──────────────────────────────────────────────────
 
@@ -90,29 +91,27 @@ Skips the skel template directory.  Logs progress per extension."
          (found nil))
     (if (not (file-directory-p ext-root))
         (ctrl-log--ok "No extensions directory — skipping")
-      (dolist (name (directory-files ext-root nil "^[^.]"))
-        (let ((ext-dir (expand-file-name name ext-root)))
-          (when (and (file-directory-p ext-dir)
-                     (not (string= name "skel")))
-            (let ((el (expand-file-name (concat name ".el") ext-dir)))
-              (if (not (file-exists-p el))
-                  (ctrl-log--warn "%s: missing %s.el — skipping" name name)
-                (setq found t)
-                (ctrl-log--log "Installing %s..." name)
-                (condition-case err
-                    (progn
-                      (add-to-list 'load-path ext-dir)
-                      (load el nil t)
-                      (let ((install-fn (intern (concat name "-install"))))
-                        (if (fboundp install-fn)
-                            (progn
-                              (funcall install-fn)
-                              (ctrl-log--ok "%s" name))
-                          (ctrl-log--fail "%s: %s-install not defined"
-                                           name name))))
-                  (error
-                   (ctrl-log--fail "%s: %s" name
-                                    (error-message-string err)))))))))
+      (dolist (ext-dir (ctrl-source--extension-dirs bootstrap--lisp-dir))
+        (let* ((name (file-name-nondirectory ext-dir))
+               (el   (expand-file-name (concat name ".el") ext-dir)))
+          (if (not (file-exists-p el))
+              (ctrl-log--warn "%s: missing %s.el — skipping" name name)
+            (setq found t)
+            (ctrl-log--log "Installing %s..." name)
+            (condition-case err
+                (progn
+                  (add-to-list 'load-path ext-dir)
+                  (load el nil t)
+                  (let ((install-fn (intern (concat name "-install"))))
+                    (if (fboundp install-fn)
+                        (progn
+                          (funcall install-fn)
+                          (ctrl-log--ok "%s" name))
+                      (ctrl-log--fail "%s: %s-install not defined"
+                                       name name))))
+              (error
+               (ctrl-log--fail "%s: %s" name
+                                (error-message-string err)))))))
       (unless found
         (ctrl-log--ok "No extensions to install")))))
 

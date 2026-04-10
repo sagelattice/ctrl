@@ -42,8 +42,9 @@
   (expand-file-name ".claude/skills" check--repo-dir)
   "Absolute path to .claude/skills/.")
 
-;; Load shared batch logging.
-(load (expand-file-name "ctrl-log" check--lisp-dir) nil t)
+;; Load shared batch logging and file discovery.
+(load (expand-file-name "ctrl-log"    check--lisp-dir) nil t)
+(load (expand-file-name "ctrl-source" check--lisp-dir) nil t)
 
 (defvar check--valid-extensions nil
   "List of extension names that passed structural validation.")
@@ -52,19 +53,7 @@
 
 (defun check--source-files ()
   "Return all .el and .sh files under the repo root, excluding vendored paths."
-  (let ((results nil))
-    (dolist (f (directory-files-recursively
-                check--repo-dir
-                "\\.\\(el\\|sh\\)$"
-                nil
-                (lambda (dir)
-                  (not (string-match-p
-                        "/\\(\\.git\\|node_modules\\|vendor\\)\\(/\\|$\\)"
-                        dir)))))
-      (unless (or (string-match-p "/\\(\\.git\\|node_modules\\|vendor\\)/" f)
-                  (string-prefix-p ".#" (file-name-nondirectory f)))
-        (push f results)))
-    (nreverse results)))
+  (ctrl-source--files check--repo-dir 'el 'sh))
 
 (defun check--comment-prefix (file)
   "Return the line-comment prefix string for FILE."
@@ -158,16 +147,13 @@ Populates `check--valid-extensions' with names that pass."
     (ctrl-log--log "  Move to lisp/extensions/%s/%s"
                 (file-name-base f) (file-name-nondirectory f)))
   ;; Validate each subdirectory.
-  (dolist (name (directory-files check--extensions-dir nil "^[^.]"))
-    (let ((ext-dir (expand-file-name name check--extensions-dir)))
-      (when (file-directory-p ext-dir)
-        (if (string= name "skel")
-            nil                         ; template — skip
-          (if (check--validate-extension name ext-dir)
-              (progn
-                (ctrl-log--ok "%s" name)
-                (push name check--valid-extensions))
-            nil)))))
+  (dolist (ext-dir (ctrl-source--extension-dirs check--lisp-dir))
+    (let ((name (file-name-nondirectory ext-dir)))
+      (if (check--validate-extension name ext-dir)
+          (progn
+            (ctrl-log--ok "%s" name)
+            (push name check--valid-extensions))
+        nil)))
   (setq check--valid-extensions (nreverse check--valid-extensions))
   (when (null check--valid-extensions)
     (ctrl-log--log "No structurally valid extensions found")))

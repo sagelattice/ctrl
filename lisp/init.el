@@ -70,10 +70,11 @@ message, and forces an immediate redisplay."
 ;; Each extension lives in its own subdirectory under lisp/extensions/<name>/.
 ;; Add every such subdirectory to the load path so (require 'name) works.
 
-(let ((ext-dir (expand-file-name "lisp/extensions" user-emacs-directory)))
-  (dolist (subdir (directory-files ext-dir t "^[^.]"))
-    (when (file-directory-p subdir)
-      (add-to-list 'load-path subdir))))
+(load (expand-file-name "lisp/ctrl-source" user-emacs-directory) nil t)
+
+(dolist (dir (ctrl-source--extension-dirs
+              (expand-file-name "lisp" user-emacs-directory)))
+  (add-to-list 'load-path dir))
 
 ;;; ─── Tree-Sitter: Grammar Sources ────────────────────────────────────────────
 ;;
@@ -353,13 +354,12 @@ message, and forces an immediate redisplay."
 ;; for that extension.  A subdirectory is only loaded when <name>/<name>.el
 ;; exists — this excludes tests/ directories and structural templates (skel).
 
-(let ((ext-dir (expand-file-name "lisp/extensions" user-emacs-directory)))
-  (dolist (subdir (directory-files ext-dir t "^[^.]"))
-    (when (file-directory-p subdir)
-      (let* ((name (file-name-nondirectory subdir))
-             (el (expand-file-name (concat name ".el") subdir)))
-        (when (file-exists-p el)
-          (ctrl--progress "Loading extension: %s" name)
-          (load el nil t))))))
+(dolist (dir (ctrl-source--extension-dirs
+              (expand-file-name "lisp" user-emacs-directory)))
+  (let* ((name (file-name-nondirectory dir))
+         (el   (expand-file-name (concat name ".el") dir)))
+    (when (file-exists-p el)
+      (ctrl--progress "Loading extension: %s" name)
+      (load el nil t))))
 
 ;;; init.el ends here

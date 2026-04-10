@@ -26,15 +26,11 @@
   (expand-file-name "../../.." doc-check--script-dir)
   "Repository root — three levels above the skill directory.")
 
+(load (expand-file-name "lisp/ctrl-source" doc-check--repo-root) nil t)
+
 (defun doc-check--md-files ()
-  "Return .md files under the repo root.
-Excludes .claude/, node_modules/, and Emacs lock files (.#*)."
-  (seq-remove
-   (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
-   (directory-files-recursively
-    doc-check--repo-root "\\.md$" nil
-    (lambda (dir)
-      (not (string-match-p "/\\(\\.claude\\|node_modules\\|vendor\\|\\..git\\)\\(/\\|$\\)" dir))))))
+  "Return all .md files under the repo root."
+  (ctrl-source--files doc-check--repo-root 'md))
 
 (defun doc-check--matching-lines (file pattern)
   "Return line numbers in FILE where PATTERN matches."
