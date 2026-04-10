@@ -161,14 +161,15 @@ Populates `check--valid-extensions' with names that pass."
 ;; ── 3. Format ─────────────────────────────────────────────────────────────────
 
 (defun check--run-format ()
-  "Rewrite indentation in each valid extension's .el file."
+  "Rewrite indentation in all .el files for each valid extension."
   (ctrl-log--section "Format")
   (dolist (name check--valid-extensions)
-    (let ((el (expand-file-name (concat name "/" name ".el") check--extensions-dir)))
-      (with-current-buffer (find-file-noselect el t)
-        (cl-letf (((symbol-function 'message) #'ignore))
-          (indent-region (point-min) (point-max)))
-        (save-buffer))
+    (let ((ext-dir (expand-file-name name check--extensions-dir)))
+      (dolist (el (ctrl-source--files ext-dir 'el))
+        (with-current-buffer (find-file-noselect el t)
+          (cl-letf (((symbol-function 'message) #'ignore))
+            (indent-region (point-min) (point-max)))
+          (save-buffer)))
       (ctrl-log--ok "%s" name))))
 
 ;; ── 4. Byte-compile ───────────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ Populates `check--valid-extensions' with names that pass."
 Deletes the .elc artifact after each check."
   (ctrl-log--section "Byte-compile")
   (dolist (name check--valid-extensions)
-    (let* ((el  (expand-file-name (concat name "/" name ".el") check--extensions-dir))
+    (let* ((el  (ctrl-source--extension-el (expand-file-name name check--extensions-dir)))
            (elc (concat (file-name-sans-extension el) ".elc"))
            (log-buf-name "*Compile-Log*"))
       ;; Clear any previous compile log.
@@ -205,7 +206,7 @@ Deletes the .elc artifact after each check."
   "Run checkdoc on each valid extension's .el file."
   (ctrl-log--section "Checkdoc")
   (dolist (name check--valid-extensions)
-    (let* ((el (expand-file-name (concat name "/" name ".el") check--extensions-dir))
+    (let* ((el (ctrl-source--extension-el (expand-file-name name check--extensions-dir)))
            (output (with-output-to-string
                      (let ((standard-output (current-buffer)))
                        (checkdoc-file el)))))
@@ -265,7 +266,7 @@ Always runs bootstrap and check module tests regardless of extension count."
   (ctrl-log--section "Claude skills")
   (if (not (file-directory-p check--claude-skills-dir))
       (ctrl-log--log "No .claude/skills/ directory — skipping")
-    (let ((files (directory-files-recursively check--claude-skills-dir "\\.el$")))
+    (let ((files (ctrl-source--files check--claude-skills-dir 'el)))
       (if (null files)
           (ctrl-log--log "No .el files in .claude/skills/ — skipping")
         (dolist (el files)

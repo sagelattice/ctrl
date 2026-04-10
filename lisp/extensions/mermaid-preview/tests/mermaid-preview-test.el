@@ -38,77 +38,77 @@
 (ert-deftest mermaid-preview-test-block-at-point-found ()
   "Returns block data when point is inside a mermaid fence."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\ngraph TD\n  A --> B\n```\n"
-    (goto-char (point-min))
-    (forward-line 1)                    ; inside the block
-    (let ((result (mermaid-preview--block-at-point)))
-      (should result)
-      (should (= (length result) 3))
-      (should (stringp (nth 2 result)))
-      (should (string-match-p "graph TD" (nth 2 result))))))
+   "```mermaid\ngraph TD\n  A --> B\n```\n"
+   (goto-char (point-min))
+   (forward-line 1)                    ; inside the block
+   (let ((result (mermaid-preview--block-at-point)))
+     (should result)
+     (should (= (length result) 3))
+     (should (stringp (nth 2 result)))
+     (should (string-match-p "graph TD" (nth 2 result))))))
 
 (ert-deftest mermaid-preview-test-block-at-point-not-found ()
   "Returns nil when point is outside any mermaid fence."
   (mermaid-preview-test--with-markdown-buffer
-      "Just some text\nNo mermaid here\n"
-    (goto-char (point-min))
-    (should-not (mermaid-preview--block-at-point))))
+   "Just some text\nNo mermaid here\n"
+   (goto-char (point-min))
+   (should-not (mermaid-preview--block-at-point))))
 
 (ert-deftest mermaid-preview-test-all-blocks-empty ()
   "Returns empty list when buffer has no mermaid blocks."
   (mermaid-preview-test--with-markdown-buffer
-      "# Heading\n\nSome text.\n"
-    (should (null (mermaid-preview--all-blocks)))))
+   "# Heading\n\nSome text.\n"
+   (should (null (mermaid-preview--all-blocks)))))
 
 (ert-deftest mermaid-preview-test-all-blocks-single ()
   "Finds a single mermaid block in the buffer."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\ngraph LR\n  X --> Y\n```\n"
-    (let ((blocks (mermaid-preview--all-blocks)))
-      (should (= (length blocks) 1))
-      (should (string-match-p "graph LR" (nth 2 (car blocks)))))))
+   "```mermaid\ngraph LR\n  X --> Y\n```\n"
+   (let ((blocks (mermaid-preview--all-blocks)))
+     (should (= (length blocks) 1))
+     (should (string-match-p "graph LR" (nth 2 (car blocks)))))))
 
 (ert-deftest mermaid-preview-test-all-blocks-multiple ()
   "Finds multiple mermaid blocks in the buffer."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\nflowchart TD\n  A --> B\n```\nText\n```mermaid\nsequenceDiagram\n  Alice->>Bob: Hi\n```\n"
-    (let ((blocks (mermaid-preview--all-blocks)))
-      (should (= (length blocks) 2))
-      (should (string-match-p "flowchart" (nth 2 (nth 0 blocks))))
-      (should (string-match-p "sequenceDiagram" (nth 2 (nth 1 blocks)))))))
+   "```mermaid\nflowchart TD\n  A --> B\n```\nText\n```mermaid\nsequenceDiagram\n  Alice->>Bob: Hi\n```\n"
+   (let ((blocks (mermaid-preview--all-blocks)))
+     (should (= (length blocks) 2))
+     (should (string-match-p "flowchart" (nth 2 (nth 0 blocks))))
+     (should (string-match-p "sequenceDiagram" (nth 2 (nth 1 blocks)))))))
 
 (ert-deftest mermaid-preview-test-block-at-point-on-fence-line ()
   "Returns block data when point is at column 0 of the opening fence line."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\ngraph TD\n  A --> B\n```\n"
-    (goto-char (point-min))             ; column 0 of the opening fence
-    (let ((result (mermaid-preview--block-at-point)))
-      (should result)
-      (should (string-match-p "graph TD" (nth 2 result))))))
+   "```mermaid\ngraph TD\n  A --> B\n```\n"
+   (goto-char (point-min))             ; column 0 of the opening fence
+   (let ((result (mermaid-preview--block-at-point)))
+     (should result)
+     (should (string-match-p "graph TD" (nth 2 result))))))
 
 (ert-deftest mermaid-preview-test-block-positions-ordered ()
   "Block BEG is always less than END."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\ngraph TD\n  A --> B\n```\n"
-    (goto-char (point-min))
-    (forward-line 1)
-    (let ((block (mermaid-preview--block-at-point)))
-      (should block)
-      (should (< (nth 0 block) (nth 1 block))))))
+   "```mermaid\ngraph TD\n  A --> B\n```\n"
+   (goto-char (point-min))
+   (forward-line 1)
+   (let ((block (mermaid-preview--block-at-point)))
+     (should block)
+     (should (< (nth 0 block) (nth 1 block))))))
 
 ;; ── Source extraction ─────────────────────────────────────────────────────────
 
 (ert-deftest mermaid-preview-test-source-content ()
   "Extracted source contains diagram text, not fence markers."
   (mermaid-preview-test--with-markdown-buffer
-      "```mermaid\ngraph TD\n  A --> B\n```\n"
-    (goto-char (point-min))
-    (forward-line 1)
-    (let ((block (mermaid-preview--block-at-point)))
-      (should block)
-      (let ((source (nth 2 block)))
-        (should-not (string-match-p "```" source))
-        (should (string-match-p "graph TD" source))))))
+   "```mermaid\ngraph TD\n  A --> B\n```\n"
+   (goto-char (point-min))
+   (forward-line 1)
+   (let ((block (mermaid-preview--block-at-point)))
+     (should block)
+     (let ((source (nth 2 block)))
+       (should-not (string-match-p "```" source))
+       (should (string-match-p "graph TD" source))))))
 
 ;; ── Subprocess invocation ─────────────────────────────────────────────────────
 

@@ -65,6 +65,13 @@ Returns nil when the extensions directory does not exist."
               (not (string= (file-name-nondirectory d) "skel"))))
        (directory-files ext-root t "^[^.]")))))
 
+(defun ctrl-source--extension-el (ext-dir)
+  "Return the main .el file for the extension in EXT-DIR, or nil if absent.
+The main file is the one whose base name matches the directory name."
+  (let* ((name (file-name-nondirectory ext-dir))
+         (el   (expand-file-name (concat name ".el") ext-dir)))
+    (when (file-exists-p el) el)))
+
 (provide 'ctrl-source)
 
 ;;; ctrl-source.el ends here

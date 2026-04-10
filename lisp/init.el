@@ -356,10 +356,8 @@ message, and forces an immediate redisplay."
 
 (dolist (dir (ctrl-source--extension-dirs
               (expand-file-name "lisp" user-emacs-directory)))
-  (let* ((name (file-name-nondirectory dir))
-         (el   (expand-file-name (concat name ".el") dir)))
-    (when (file-exists-p el)
-      (ctrl--progress "Loading extension: %s" name)
-      (load el nil t))))
+  (when-let ((el (ctrl-source--extension-el dir)))
+    (ctrl--progress "Loading extension: %s" (file-name-nondirectory dir))
+    (load el nil t)))
 
 ;;; init.el ends here
