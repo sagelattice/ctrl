@@ -5,8 +5,10 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 ## Requirements
 
 - macOS
-- Internet access
-- sudo rights (for Xcode Command Line Tools only)
+- GNU Emacs 30+ (`brew install emacs`)
+- Xcode Command Line Tools (`xcode-select --install`)
+- Homebrew
+- Internet access (for first-launch package download)
 
 ## Installation
 
@@ -14,31 +16,22 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 ./install.sh
 ```
 
-Installs Xcode CLT, Homebrew, and `tree-sitter`; installs GNU Emacs 30 from the official
-Homebrew formula (pre-built bottle); compiles tree-sitter grammars; and symlinks this repo
-into `~/.config/emacs/`. Idempotent — safe to run multiple times.
+Asserts GNU Emacs 30+ is installed, then delegates all setup to `lisp/bootstrap.el`:
+verifies prerequisites, creates the config scaffold, runs extension setup, and compiles
+tree-sitter grammars. Idempotent — safe to run multiple times.
 
-On first launch, `use-package` installs packages from MELPA. This requires internet access
-and takes about 30 seconds.
+On first launch, `use-package` installs packages from MELPA.
 
 ## Repository Layout
 
 ```
 ctrl/
-├── install.sh           # Hermetic macOS installer
-├── check.sh             # Locates Emacs and delegates all checks to lisp/check.el
-├── lisp/                # Emacs Lisp configuration
-│   ├── early-init.el    # Pre-GUI: GC tuning, UI suppression
-│   ├── init.el          # Main config: packages, editing, Clojure/CIDER, Elisp dev
-│   ├── grammars.el      # Canonical tree-sitter grammar source list
-│   ├── bootstrap.el     # Config scaffold + extension bootstrap (headless)
-│   ├── check.el         # Quality checks: SPDX, structure, format, ERT (headless)
-│   └── extensions/      # Custom extensions (each in its own subdirectory)
-└── docs/                # Internal design documents
+├── install.sh      # macOS setup entrypoint
+├── check.sh        # Quality checks
+├── lisp/           # Emacs Lisp configuration
+│   └── extensions/ # Custom extensions
+└── docs/           # Design documents
 ```
-
-Files are symlinked into `~/.config/emacs/` by `install.sh`. Never edit files at
-their symlink destinations — always edit the source here.
 
 ## Custom Extensions
 
@@ -62,7 +55,8 @@ Enforces structural and quality norms across all extensions:
 | Format | Rewrites indentation in place via `indent-region` |
 | Byte-compile | Catches undefined variables, wrong-arity calls, syntax errors |
 | Checkdoc | Validates docstring presence and style |
-| ERT | Runs each extension's paired test suite |
+| Claude skills | Byte-compiles and checkdocs `.el` files under `.claude/skills/` |
+| ERT | Runs `bootstrap-test.el`, `check-test.el`, and each extension's paired test suite |
 
 Exits non-zero on any failure. All checks use tools built into Emacs — no external
 linters or formatters.

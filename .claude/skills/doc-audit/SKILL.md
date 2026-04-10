@@ -45,6 +45,7 @@ Always read:
 - All files under `docs/`
 - `check.sh`, `install.sh`
 - `lisp/init.el`
+- All `SKILL.md` files under `.claude/skills/`
 
 For each extension found under `lisp/extensions/`:
 - `<name>/<name>.el`

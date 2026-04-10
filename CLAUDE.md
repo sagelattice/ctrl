@@ -10,37 +10,16 @@ This repository is the canonical source of truth for all dotfiles. Files live he
 
 ```
 ctrl/
-├── install.sh              # Setup entrypoint: assert Emacs 30+ present, run bootstrap.el
-├── check.sh                # Locate Emacs and delegate to lisp/check.el
-└── lisp/
-    ├── early-init.el       # Pre-GUI: GC tuning, UI suppression
-    ├── init.el             # Main config: packages, editing, Clojure/CIDER, Elisp dev
-    ├── grammars.el         # Canonical tree-sitter grammar source list
-    ├── bootstrap.el        # Headless config scaffold + extension bootstrap (batch)
-    ├── bootstrap-test.el   # ERT tests for bootstrap.el
-    ├── check.el            # Headless quality checks: SPDX, structure, format, ERT (batch)
-    ├── check-test.el       # ERT tests for check.el
-    └── extensions/         # Custom .el extensions (auto-loaded on startup)
-        └── <name>/
-            ├── <name>.el
-            └── tests/
-                └── <name>-test.el
+├── install.sh      # macOS setup entrypoint
+├── check.sh        # Quality checks
+├── lisp/           # Emacs Lisp configuration
+│   └── extensions/ # Custom extensions
+└── docs/           # Design documents
 ```
 
-`install.sh` symlinks these files into `user-emacs-directory` — do not edit them there directly. Edit the source files here; the symlinks keep the live config in sync.
-
-Expected live config layout (XDG default):
-
-```
-~/.config/emacs/
-├── early-init.el        → symlink to lisp/early-init.el
-├── init.el              → symlink to lisp/init.el
-├── lisp/                → symlink to lisp/ (entire directory)
-│   └── extensions/      # custom .el files (add new features here)
-├── backups/             # version-controlled backups (gitignored)
-├── auto-saves/          # autosave files (gitignored)
-└── custom.el            # M-x customize output (gitignored)
-```
+`install.sh` symlinks `lisp/` wholesale into `user-emacs-directory`. Never edit files
+at their symlink destinations — always edit the source here. `backups/`, `auto-saves/`,
+and `custom.el` are generated at runtime and gitignored.
 
 ## Package Stack
 
@@ -56,6 +35,7 @@ Expected live config layout (XDG default):
 | Elisp dev | `highlight-defined` + `eros` | Symbol highlighting, inline eval |
 | Syntax checking | `flycheck` | On-the-fly linting |
 | Keybinding help | `which-key` | Show key completions after prefix |
+| Markdown | `markdown-mode` | Syntax highlighting and structure for `.md` files |
 
 Archives: GNU ELPA (priority 10) > NonGNU ELPA (8) > MELPA (5).
 
@@ -95,7 +75,7 @@ Extensions follow the architecture defined in `docs/extension-architecture.md`. 
 ./check.sh
 ```
 
-This is the single entry point for all quality checks and unit tests. Run it after every change. It covers: SPDX header insertion, structural validation, formatting, byte-compilation, checkdoc, and ERT tests for all extensions plus `bootstrap.el` and `check.el`. Exits non-zero on any failure.
+This is the single entry point for all quality checks and unit tests. Run it after every change. It covers: SPDX header insertion, structural validation, formatting, byte-compilation, checkdoc, byte-compilation and checkdoc of `.claude/skills/` files, and ERT tests for all extensions plus `bootstrap.el` and `check.el`. Exits non-zero on any failure.
 
 ## Naming Conventions
 

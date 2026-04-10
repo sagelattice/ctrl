@@ -7,12 +7,13 @@
 ;;   emacs --batch -l lisp/check.el
 ;;
 ;; Runs across all source files and extensions:
-;;   1. SPDX       — inserts missing license/copyright headers
-;;   2. Structure  — validates extension layout and code conventions
-;;   3. Format     — rewrites indentation via indent-region
-;;   4. Byte-compile — catches undefined vars, wrong-arity calls, syntax errors
-;;   5. Checkdoc   — validates docstring presence and style
-;;   6. ERT        — runs bootstrap-test, check-test, and each extension's test suite
+;;   1. SPDX          — inserts missing license/copyright headers
+;;   2. Structure     — validates extension layout and code conventions
+;;   3. Format        — rewrites indentation via indent-region
+;;   4. Byte-compile  — catches undefined vars, wrong-arity calls, syntax errors
+;;   5. Checkdoc      — validates docstring presence and style
+;;   6. Claude skills — byte-compiles and checkdocs .el files in .claude/skills/
+;;   7. ERT           — runs bootstrap-test, check-test, and each extension's test suite
 ;;
 ;; Exits with status 1 if any check fails; status 0 on success.
 ;; Idempotent: safe to re-run.
@@ -36,6 +37,10 @@
 (defconst check--extensions-dir
   (expand-file-name "extensions" check--lisp-dir)
   "Absolute path to lisp/extensions/.")
+
+(defconst check--claude-skills-dir
+  (expand-file-name ".claude/skills" check--repo-dir)
+  "Absolute path to .claude/skills/.")
 
 ;; Load shared batch logging.
 (load (expand-file-name "ctrl-log" check--lisp-dir) nil t)
@@ -267,6 +272,42 @@ Always runs bootstrap and check module tests regardless of extension count."
        (expand-file-name (concat "tests/" name "-test.el") ext-dir)
        ext-dir))))
 
+;; ── 6. Claude skill files ─────────────────────────────────────────────────────
+
+(defun check--run-claude-skills ()
+  "Byte-compile and checkdoc all .el files under .claude/skills/."
+  (ctrl-log--section "Claude skills")
+  (if (not (file-directory-p check--claude-skills-dir))
+      (ctrl-log--log "No .claude/skills/ directory — skipping")
+    (let ((files (directory-files-recursively check--claude-skills-dir "\\.el$")))
+      (if (null files)
+          (ctrl-log--log "No .el files in .claude/skills/ — skipping")
+        (dolist (el files)
+          (let* ((label       (file-relative-name el check--repo-dir))
+                 (elc         (concat (file-name-sans-extension el) ".elc"))
+                 (log-buf-name "*Compile-Log*"))
+            (when (get-buffer log-buf-name) (kill-buffer log-buf-name))
+            (let ((result (byte-compile-file el)))
+              (let* ((log-buf    (get-buffer log-buf-name))
+                     (log-output (if log-buf
+                                     (with-current-buffer log-buf (buffer-string))
+                                   "")))
+                (when (file-exists-p elc) (delete-file elc))
+                (if (and result (not (string-match-p "\\(error\\|warning\\)" log-output)))
+                    (ctrl-log--ok "%s: byte-compile" label)
+                  (ctrl-log--fail "%s: byte-compile failed or emitted warnings" label)
+                  (when (and log-buf (not (string-empty-p log-output)))
+                    (dolist (line (split-string log-output "\n" t))
+                      (message "      %s" line))))))
+            (let ((output (with-output-to-string
+                            (let ((standard-output (current-buffer)))
+                              (checkdoc-file el)))))
+              (if (string-empty-p output)
+                  (ctrl-log--ok "%s: checkdoc" label)
+                (ctrl-log--fail "%s: checkdoc errors" label)
+                (dolist (line (split-string output "\n" t))
+                  (message "      %s" line))))))))))
+
 ;; ── Entry point ──────────────────────────────────────────────────────────────
 
 (defun check-run ()
@@ -280,6 +321,7 @@ Intended for headless invocation via `emacs --batch -l check.el -f check-run'."
     (check--run-format)
     (check--run-byte-compile)
     (check--run-checkdoc))
+  (check--run-claude-skills)
   (check--run-ert)
   (if (= ctrl-log--errors 0)
       (message "\nAll checks passed.")
