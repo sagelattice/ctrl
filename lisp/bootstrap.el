@@ -18,12 +18,6 @@
 
 ;;; Code:
 
-;; ── Prerequisite detection ────────────────────────────────────────────────────
-
-(defconst bootstrap--brew-path
-  (executable-find "brew")
-  "Path to the Homebrew binary, or nil if not found.")
-
 (defconst bootstrap--lisp-dir
   (file-name-directory (or load-file-name buffer-file-name ""))
   "Absolute path to the lisp/ directory containing bootstrap.el.")
@@ -33,21 +27,7 @@
 ;; Load shared batch logging.
 (load (expand-file-name "ctrl-log" bootstrap--lisp-dir) nil t)
 
-;; ── 1. Prerequisite verification ─────────────────────────────────────────────
-
-(defun bootstrap--verify-prerequisites ()
-  "Assert that system prerequisites are installed.
-Checks for Xcode CLT and Homebrew.  Tree-sitter support is verified
-separately via `bootstrap--verify-features'."
-  (ctrl-log--section "Prerequisites")
-  (if (zerop (call-process "xcode-select" nil nil nil "-p"))
-      (ctrl-log--ok "Xcode CLT")
-    (ctrl-log--fail "Xcode CLT absent — run: xcode-select --install"))
-  (if bootstrap--brew-path
-      (ctrl-log--ok "Homebrew")
-    (ctrl-log--fail "Homebrew absent — see https://brew.sh")))
-
-;; ── 2. Feature verification ───────────────────────────────────────────────────
+;; ── 1. Feature verification ──────────────────────────────────────────────────
 
 (defun bootstrap--verify-features ()
   "Assert that required Emacs build features are available.
@@ -58,7 +38,7 @@ Does not exit immediately — errors are accumulated."
       (ctrl-log--ok "Tree-sitter: active")
     (ctrl-log--fail "Tree-sitter not active — run: brew reinstall emacs")))
 
-;; ── 3. Config scaffold ────────────────────────────────────────────────────────
+;; ── 2. Config scaffold ────────────────────────────────────────────────────────
 
 (defun bootstrap--link (src dst)
   "Create a symlink at DST pointing to SRC, idempotently.
@@ -100,7 +80,7 @@ whichever is active on this machine.  All operations are idempotent."
     (bootstrap--link init       (expand-file-name "init.el"       config-dir))
     (bootstrap--link lisp-src   (expand-file-name "lisp"          config-dir))))
 
-;; ── 4. Extension bootstrap ────────────────────────────────────────────────────
+;; ── 3. Extension bootstrap ────────────────────────────────────────────────────
 
 (defun bootstrap--install-extensions ()
   "Enumerate extensions under lisp/extensions/ and call each <name>-install.
@@ -136,7 +116,7 @@ Skips the skel template directory.  Logs progress per extension."
       (unless found
         (ctrl-log--ok "No extensions to install")))))
 
-;; ── 5. Tree-sitter grammar compilation ───────────────────────────────────────
+;; ── 4. Tree-sitter grammar compilation ───────────────────────────────────────
 
 (defun bootstrap--compile-grammars ()
   "Compile tree-sitter language grammars for all configured languages.
@@ -170,7 +150,6 @@ Per-language errors are caught and reported without aborting the run."
   "Run the full bootstrap sequence and exit with status 1 on any error.
 Intended for headless invocation via `emacs --batch -l bootstrap.el -f bootstrap-run'."
   (setq ctrl-log--errors 0)
-  (bootstrap--verify-prerequisites)
   (bootstrap--verify-features)
   (bootstrap--config-scaffold)
   (bootstrap--install-extensions)

@@ -27,11 +27,14 @@
   "Repository root — three levels above the skill directory.")
 
 (defun doc-check--md-files ()
-  "Return all .md files under the repo root, excluding .claude/ and node_modules/."
-  (directory-files-recursively
-   doc-check--repo-root "\\.md$" nil
-   (lambda (dir)
-     (not (string-match-p "/\\(\\.claude\\|node_modules\\|vendor\\|\\..git\\)\\(/\\|$\\)" dir)))))
+  "Return .md files under the repo root.
+Excludes .claude/, node_modules/, and Emacs lock files (.#*)."
+  (seq-remove
+   (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
+   (directory-files-recursively
+    doc-check--repo-root "\\.md$" nil
+    (lambda (dir)
+      (not (string-match-p "/\\(\\.claude\\|node_modules\\|vendor\\|\\..git\\)\\(/\\|$\\)" dir))))))
 
 (defun doc-check--matching-lines (file pattern)
   "Return line numbers in FILE where PATTERN matches."

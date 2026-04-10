@@ -3,12 +3,12 @@
 # SPDX-FileCopyrightText: 2026 Anthony Urena
 # install.sh — Setup entrypoint: assert Emacs 30+ present, run bootstrap.el
 #
-# Asserts that GNU Emacs 30+ is installed, then delegates all setup to
-# lisp/bootstrap.el, which verifies prerequisites, creates the config scaffold,
-# runs extension setup, and compiles tree-sitter grammars.
+# Asserts that GNU Emacs 30+ is on PATH, then delegates all setup to
+# lisp/bootstrap.el, which verifies tree-sitter support, creates the config
+# scaffold, runs extension setup, and compiles tree-sitter grammars.
 #
 # Idempotent: safe to run multiple times.
-# Requires: macOS
+# Requires: macOS, GNU Emacs 30+
 
 set -euo pipefail
 
@@ -24,18 +24,9 @@ die() { echo -e "${RED}✗ ERROR:${RESET} $*" >&2; exit 1; }
 # ── Platform guard ─────────────────────────────────────────────────────────────
 [[ "$(uname -s)" == "Darwin" ]] || die "This script is macOS-only."
 
-ARCH="$(uname -m)"
-if [[ "$ARCH" == "arm64" ]]; then
-  HOMEBREW_PREFIX="/opt/homebrew"
-else
-  HOMEBREW_PREFIX="/usr/local"
-fi
-
-EMACS_BIN="${HOMEBREW_PREFIX}/bin/emacs"
-
 # ── Assert Emacs 30+ ───────────────────────────────────────────────────────────
-[[ -x "$EMACS_BIN" ]] \
-  || die "Emacs not found at ${EMACS_BIN} — install with: brew install emacs"
+EMACS_BIN="$(command -v emacs 2>/dev/null)" \
+  || die "Emacs not found on PATH — install GNU Emacs 30+"
 
 installed_ver=$("$EMACS_BIN" --version 2>/dev/null \
                 | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)

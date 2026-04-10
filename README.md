@@ -5,9 +5,7 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 ## Requirements
 
 - macOS
-- GNU Emacs 30+ (`brew install emacs`)
-- Xcode Command Line Tools (`xcode-select --install`)
-- Homebrew
+- GNU Emacs 30+
 - Internet access (for first-launch package download)
 
 ## Installation
@@ -17,8 +15,8 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 ```
 
 Asserts GNU Emacs 30+ is installed, then delegates all setup to `lisp/bootstrap.el`:
-verifies prerequisites, creates the config scaffold, runs extension setup, and compiles
-tree-sitter grammars. Idempotent — safe to run multiple times.
+verifies tree-sitter support, creates the config scaffold, runs extension setup, and
+compiles tree-sitter grammars. Idempotent — safe to run multiple times.
 
 On first launch, `use-package` installs packages from MELPA.
 

@@ -30,9 +30,8 @@ invocation are directly available once Emacs exists.
 ## Constraints
 
 - `install.sh` retains exactly one responsibility: asserting that Emacs 30+ is
-  installed and invoking `bootstrap.el`. System prerequisites (Xcode CLT,
-  Homebrew, tree-sitter) are documented requirements asserted by `bootstrap.el`,
-  not installed by either script. Everything else moves to `bootstrap.el`.
+  on PATH and invoking `bootstrap.el`. `bootstrap.el` asserts tree-sitter
+  support. Neither script installs anything. Everything else moves to `bootstrap.el`.
 - `check.sh` retains exactly one responsibility: locating the Emacs binary and
   exec'ing `emacs --batch -l lisp/check.el`. All check logic moves to `check.el`.
 - Both `.el` files use lexical binding and end with `(provide ...)`.
@@ -57,7 +56,7 @@ invocation are directly available once Emacs exists.
 flowchart TD
     A([install.sh]) --> B[Assert Emacs 30+ present]
     B --> C["emacs --batch -l lisp/bootstrap.el -f bootstrap-run"]
-    C --> D[Assert prerequisites]
+    C --> D[Verify tree-sitter support]
     D --> E[Config scaffold]
     E --> F[Extension setup]
     F --> G[Grammar compilation]
@@ -216,9 +215,7 @@ delegate to `bootstrap.el`:
 "$EMACS_BIN" --batch -l "${SCRIPT_DIR}/lisp/bootstrap.el" -f bootstrap-run
 ```
 
-System prerequisites (Xcode CLT, Homebrew, tree-sitter) are documented
-requirements. `bootstrap.el` asserts they are present. Neither script installs
-them.
+`bootstrap.el` asserts tree-sitter support. Neither script installs anything.
 
 ---
 

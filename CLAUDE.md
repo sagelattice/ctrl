@@ -83,9 +83,9 @@ This is the single entry point for all quality checks and unit tests. Run it aft
 
 ## Development Process
 
-- System-level prerequisites (Xcode CLT, Homebrew, tree-sitter, Emacs itself) are documented requirements.  `bootstrap.el` asserts they are present; `install.sh` asserts Emacs is present.  Neither installs them.
+- System-level prerequisites (Emacs itself) are documented requirements.  `bootstrap.el` asserts tree-sitter support; `install.sh` asserts Emacs is present on PATH.  Neither installs them.
 - Shell is for asserting Emacs is present and invoking `bootstrap.el`.  Everything beyond that — config scaffold, extension setup, grammar compilation — belongs in Emacs Lisp.  Resist the pull to reach for shell when Elisp will do.
 - All configuration setup must go through `install.sh` → `bootstrap.el`.  Never apply configuration changes with ad-hoc shell commands — the script is the deterministic, idempotent record of system state.
-- Each dependency has exactly one canonical location.  System prerequisites are documented in the Installation section and asserted in `bootstrap.el`.  Extension runtime dependencies (external binaries, language runtimes) are asserted in `M-x <name>-install`.  Elisp package dependencies are declared via `use-package` or `Package-Requires` and installed by Emacs on first launch.
+- Each dependency has exactly one canonical location.  System prerequisites are documented in the Installation section; tree-sitter support is asserted by `bootstrap.el`.  Extension runtime dependencies (external binaries, language runtimes) are asserted in `M-x <name>-install`.  Elisp package dependencies are declared via `use-package` or `Package-Requires` and installed by Emacs on first launch.
 - Extensions that require Emacs built-in capabilities must assert those requirements as `display-warning` calls at load time — not inside the install function.  The install function only installs what it owns.
 - When a coding error causes `./check.sh` to fail, or a bug surfaces in a live session, record it in `docs/elisp-pitfalls.md` (general Elisp) or `docs/elisp-extension-pitfalls.md` (extension-specific) so it is not reproduced in future extensions.
