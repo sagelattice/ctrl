@@ -25,7 +25,8 @@
         (bash       "https://github.com/tree-sitter/tree-sitter-bash")
         (toml       "https://github.com/ikatyang/tree-sitter-toml")
         (yaml       "https://github.com/ikatyang/tree-sitter-yaml")
-        (markdown   "https://github.com/ikatyang/tree-sitter-markdown")))
+        (markdown   "https://github.com/ikatyang/tree-sitter-markdown")
+        (rust       "https://github.com/tree-sitter/tree-sitter-rust")))
 
 (provide 'grammars)
 

@@ -348,6 +348,42 @@ message, and forces an immediate redisplay."
   :custom
   (markdown-fontify-code-blocks-natively t))
 
+;;; ─── Rust ─────────────────────────────────────────────────────────────────────
+;;
+;; rust-ts-mode is built into Emacs 29+ and uses the tree-sitter grammar for
+;; accurate highlighting, indentation, and imenu.  eglot (also built-in)
+;; connects to rust-analyzer for completion and diagnostics.
+;;
+;; Prerequisites (run once): brew install rustup && rustup-init && rustup component add rust-analyzer
+
+(unless (executable-find "rustup")
+  (display-warning 'ctrl "rustup not found — Rust development unavailable" :warning))
+
+(use-package rust-ts-mode
+  :ensure nil
+  :mode "\\.rs\\'"
+  :hook (rust-ts-mode . eglot-ensure))
+
+;;; ─── OCaml ────────────────────────────────────────────────────────────────────
+;;
+;; tuareg: major mode for .ml/.mli/.mly/.mll files.
+;; merlin: IDE layer — type-at-point (C-c C-t), jump to definition (C-c C-l),
+;;         and completion via merlin-capf, picked up automatically by corfu.
+;;
+;; Prerequisites (run once): brew install opam && opam init && opam install merlin
+
+(unless (executable-find "opam")
+  (display-warning 'ctrl "opam not found — OCaml development unavailable" :warning))
+
+(use-package tuareg
+  :mode (("\\.ml[ily]?\\'" . tuareg-mode)
+         ("\\.topml\\'"    . tuareg-mode)))
+
+(use-package merlin
+  :hook (tuareg-mode . merlin-mode)
+  :custom
+  (merlin-command 'opam))
+
 ;;; ─── Custom Extensions Loader ────────────────────────────────────────────────
 ;;
 ;; Each extension subdirectory contains a <name>.el file that owns all logic
