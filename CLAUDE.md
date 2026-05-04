@@ -35,7 +35,7 @@ and `custom.el` are generated at runtime and gitignored.
 | Elisp dev | `highlight-defined` + `eros` | Symbol highlighting, inline eval |
 | Syntax checking | `flycheck` | On-the-fly linting |
 | Keybinding help | `which-key` | Show key completions after prefix |
-| Markdown | `markdown-mode` | Syntax highlighting and structure for `.md` files |
+| Markdown | `markdown-mode` + `pandoc` | Syntax highlighting, structure, and browser preview (`C-c C-c p`) for `.md` files |
 | Rust | `rust-ts-mode` (built-in) + `eglot` | Rust editing; eglot connects to `rust-analyzer` |
 | OCaml | `tuareg` + `merlin` | OCaml editing; merlin provides type-at-point and completion |
 
@@ -91,3 +91,7 @@ This is the single entry point for all quality checks and unit tests. Run it aft
 - Each dependency has exactly one canonical location.  System prerequisites are documented in the Installation section; tree-sitter support is asserted by `bootstrap.el`.  Extension runtime dependencies (external binaries, language runtimes) are asserted in `M-x <name>-install`.  Elisp package dependencies are declared via `use-package` or `Package-Requires` and installed by Emacs on first launch.
 - Extensions that require Emacs built-in capabilities must assert those requirements as `display-warning` calls at load time — not inside the install function.  The install function only installs what it owns.
 - When a coding error causes `./check.sh` to fail, or a bug surfaces in a live session, record it in `docs/elisp-pitfalls.md` (general Elisp) or `docs/elisp-extension-pitfalls.md` (extension-specific) so it is not reproduced in future extensions.
+
+## Security Constraints
+
+- Do not add Claude Code hooks that auto-execute shell commands.  After making config changes, instruct the user to run `M-x ctrl-reload-config` in their live Emacs session.

@@ -36,6 +36,15 @@ message, and forces an immediate redisplay."
     (message "[ctrl] %s" (apply #'format fmt args))
     (redisplay t)))
 
+;;; ─── Config Reload ────────────────────────────────────────────────────────────
+
+(defun ctrl-reload-config ()
+  "Reload init.el in the live session.
+Safe to call multiple times; init.el is written to be idempotent."
+  (interactive)
+  (load-file user-init-file)
+  (message "[ctrl] Config reloaded"))
+
 ;;; ─── Package Management ───────────────────────────────────────────────────────
 
 (require 'package)
@@ -342,11 +351,16 @@ message, and forces an immediate redisplay."
 ;; preview support for Markdown files.  Code blocks are fontified using
 ;; the native major mode for each language fence.
 
+(unless (executable-find "pandoc")
+  (display-warning 'ctrl "pandoc not found — markdown-live-preview-mode unavailable" :warning))
+
 (use-package markdown-mode
   :mode (("\\.md\\'"       . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :custom
-  (markdown-fontify-code-blocks-natively t))
+  (markdown-fontify-code-blocks-natively t)
+  (markdown-enable-math t)
+  (markdown-command "pandoc --mathml"))
 
 ;;; ─── Rust ─────────────────────────────────────────────────────────────────────
 ;;
@@ -370,7 +384,7 @@ message, and forces an immediate redisplay."
 ;; merlin: IDE layer — type-at-point (C-c C-t), jump to definition (C-c C-l),
 ;;         and completion via merlin-capf, picked up automatically by corfu.
 ;;
-;; Prerequisites (run once): brew install opam && opam init && opam install merlin
+;; Prerequisites (run once): brew install opam && opam init && opam install merlin ocamlformat
 
 (unless (executable-find "opam")
   (display-warning 'ctrl "opam not found — OCaml development unavailable" :warning))
@@ -383,6 +397,10 @@ message, and forces an immediate redisplay."
   :hook (tuareg-mode . merlin-mode)
   :custom
   (merlin-command 'opam))
+
+(use-package ocamlformat
+  :hook (tuareg-mode . (lambda ()
+                         (add-hook 'before-save-hook #'ocamlformat-before-save nil t))))
 
 ;;; ─── Custom Extensions Loader ────────────────────────────────────────────────
 ;;

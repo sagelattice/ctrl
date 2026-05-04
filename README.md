@@ -7,6 +7,11 @@ Emacs dotfiles for GNU Emacs 30+ on macOS, with tree-sitter enabled.
 - macOS
 - GNU Emacs 30+
 - Internet access (for first-launch package download)
+- `pandoc` — markdown live preview (`brew install pandoc`)
+
+**Language development (optional):**
+- Rust: `brew install rustup && rustup-init && rustup component add rust-analyzer`
+- OCaml: `brew install opam && opam init && opam install merlin ocamlformat`
 
 ## Installation
 
