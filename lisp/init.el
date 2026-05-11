@@ -378,6 +378,13 @@ Safe to call multiple times; init.el is written to be idempotent."
   :mode "\\.rs\\'"
   :hook (rust-ts-mode . eglot-ensure))
 
+;;; ─── TypeScript / TSX ────────────────────────────────────────────────────────
+
+(use-package typescript-ts-mode
+  :ensure nil
+  :mode (("\\.ts\\'"  . typescript-ts-mode)
+         ("\\.tsx\\'" . tsx-ts-mode)))
+
 ;;; ─── OCaml ────────────────────────────────────────────────────────────────────
 ;;
 ;; tuareg: major mode for .ml/.mli/.mly/.mll files.

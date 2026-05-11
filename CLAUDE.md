@@ -36,6 +36,7 @@ and `custom.el` are generated at runtime and gitignored.
 | Syntax checking | `flycheck` | On-the-fly linting |
 | Keybinding help | `which-key` | Show key completions after prefix |
 | Markdown | `markdown-mode` + `pandoc` | Syntax highlighting, structure, and browser preview (`C-c C-c p`) for `.md` files |
+| TypeScript / TSX | `typescript-ts-mode` (built-in) | `.ts`/`.tsx` syntax highlighting via tree-sitter |
 | Rust | `rust-ts-mode` (built-in) + `eglot` | Rust editing; eglot connects to `rust-analyzer` |
 | OCaml | `tuareg` + `merlin` | OCaml editing; merlin provides type-at-point and completion |
 
@@ -51,7 +52,7 @@ Grammars are compiled by `bootstrap.el` during setup. To install one manually:
 M-x treesit-install-language-grammar RET <language> RET
 ```
 
-Mode remapping is active for: python, javascript, json, css, bash/sh.  `.rs` files load `rust-ts-mode` directly (no remap needed — no legacy `rust-mode` installed).
+Mode remapping is active for: python, javascript, json, css, bash/sh.  `.rs`, `.ts`, and `.tsx` files load their tree-sitter modes directly via `auto-mode-alist` (no legacy modes to remap from).
 
 ## Adding Custom Extensions
 
