@@ -373,10 +373,19 @@ Safe to call multiple times; init.el is written to be idempotent."
 (unless (executable-find "rustup")
   (display-warning 'ctrl "rustup not found — Rust development unavailable" :warning))
 
+(unless (executable-find "rust-analyzer")
+  (display-warning 'ctrl "rust-analyzer not found — run: rustup component add rust-analyzer" :warning))
+
 (use-package rust-ts-mode
   :ensure nil
   :mode "\\.rs\\'"
-  :hook (rust-ts-mode . eglot-ensure))
+  :hook ((rust-ts-mode . eglot-ensure)
+         (rust-ts-mode . (lambda ()
+                           (add-hook 'before-save-hook
+                                     (lambda ()
+                                       (when (eglot-managed-p)
+                                         (eglot-format-buffer)))
+                                     nil t)))))
 
 ;;; ─── TypeScript / TSX ────────────────────────────────────────────────────────
 
